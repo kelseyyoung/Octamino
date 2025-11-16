@@ -4,7 +4,7 @@ import { Tile } from "./Tile";
 let rankings: string = "";
 async function loadRankings(): Promise<void> {
   if (!rankings) {
-    const response = await fetch("/Ranking.txt");
+    const response = await fetch("/RankingWithEntireSquare.txt");
     rankings = await response.text();
   }
 }
@@ -15,19 +15,34 @@ function generateRandomColor(): string {
     .padStart(6, "0")}`;
 }
 
+const COLORS = [
+  "#FD9301",
+  "#FFFF00",
+  "#23FA00",
+  "#FD40FF",
+  "#27FDFF",
+  "#0A32FF",
+  "#FD2600",
+  "#7030A0",
+];
+
 export class Shape {
   private tiles: Tile[];
   private color: string;
   private isActive: boolean = false;
 
-  constructor(tilePositions: { x: number; y: number }[], isActive?: boolean) {
+  constructor(
+    tilePositions: { x: number; y: number }[],
+    color?: string,
+    isActive?: boolean
+  ) {
     if (isActive !== undefined) {
       this.isActive = isActive;
     }
     // Generate a random color
-    this.color = generateRandomColor();
+    this.color = color ?? generateRandomColor();
     // Create tiles at each tile position
-    this.tiles = tilePositions.map((pos) => new Tile(pos.x, pos.y, this.color));
+    this.tiles = tilePositions.map((pos) => new Tile(pos.x, pos.y));
   }
 
   static generateRandomShape(): Shape {
@@ -53,9 +68,9 @@ export class Shape {
     return new Shape(positions);
   }
 
-  static async generateShapeFromRanking(
+  static async generateShapesFromRanking(
     ranking: "easy" | "medium" | "hard"
-  ): Promise<Shape> {
+  ): Promise<Shape[]> {
     // Read the Ranking.txt file
     await loadRankings();
 
@@ -84,22 +99,42 @@ export class Shape {
     const randomIndex = Math.floor(Math.random() * filteredLines.length);
     const selectedLine = filteredLines[randomIndex];
     const parts = selectedLine.trim().split(" ");
-    const positions: { x: number; y: number }[] = [];
+    // The selected line will have 64 numbers, 8 shapes of 8 numbers each
+    // Create all 8 shapes and put them in an array
+    const shapes: Shape[] = [];
+
+    // Shuffle the colors array to randomize which color goes to which shape
+    const shuffledColors = [...COLORS].sort(() => Math.random() - 0.5);
+
     for (let i = 0; i < 8; i++) {
-      const index = parseInt(parts[i]);
-      const x = index % 8;
-      const y = Math.floor(index / 8);
-      positions.push({ x, y });
+      const positions: { x: number; y: number }[] = [];
+      // Each shape gets 8 tiles from parts[i*8] to parts[i*8+7]
+      for (let j = 0; j < 8; j++) {
+        const index = parseInt(parts[i * 8 + j]);
+        const x = index % 8;
+        const y = Math.floor(index / 8);
+        positions.push({ x, y });
+      }
+      shapes.push(new Shape(positions, shuffledColors[i]));
     }
-    return new Shape(positions);
+    return shapes;
   }
 
   static duplicate(s: Shape): Shape {
     return new Shape(
       s.getTiles().map((tile: Tile) => {
         return { x: tile.getX(), y: tile.getY() };
-      })
+      }),
+      s.color
     );
+  }
+
+  getColor() {
+    return this.color;
+  }
+
+  setColor(color: string) {
+    this.color = color;
   }
 
   rotate(clockwise: boolean) {
@@ -122,11 +157,7 @@ export class Shape {
         newY = -x;
       }
       // Move back to original center and round to nearest integer
-      return new Tile(
-        Math.round(newX + centerX),
-        Math.round(newY + centerY),
-        tile.getColor()
-      );
+      return new Tile(Math.round(newX + centerX), Math.round(newY + centerY));
     });
   }
 
@@ -147,7 +178,7 @@ export class Shape {
       } else {
         newY = Math.round(2 * centerY - y);
       }
-      return new Tile(newX, newY, tile.getColor());
+      return new Tile(newX, newY);
     });
   }
 
@@ -183,7 +214,7 @@ export class Shape {
         // No tiles should be interpolated if any of them go out of bounds
         outOfBounds = true;
       }
-      return new Tile(pos.x + deltaX, pos.y + deltaY, tile.getColor());
+      return new Tile(pos.x + deltaX, pos.y + deltaY);
     });
     if (!outOfBounds) {
       this.tiles = newTiles;

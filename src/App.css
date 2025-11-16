@@ -2,6 +2,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #ccc;
 }
 
 .controls-container {
@@ -9,6 +10,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  margin: 0 16px;
 }
 
 .rotate-left {

@@ -1,12 +1,10 @@
 export class Tile {
   private x: number;
   private y: number;
-  private color: string;
 
-  constructor(x: number, y: number, color: string) {
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
-    this.color = color;
   }
 
   getX() {
@@ -26,11 +24,7 @@ export class Tile {
     this.y = y;
   }
 
-  getColor() {
-    return this.color;
-  }
-
   toString(): string {
-    return `Tile (x=${this.x}, y=${this.y}, color=${this.color})`;
+    return `Tile (x=${this.x}, y=${this.y})`;
   }
 }
