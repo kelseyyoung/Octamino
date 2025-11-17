@@ -7,7 +7,6 @@ import {
   type MoveShapeDirection,
 } from "./objects/Grid";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
 import Rotate90DegreesCwIcon from "@mui/icons-material/Rotate90DegreesCw";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
@@ -15,13 +14,29 @@ import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Tooltip from "@mui/material/Tooltip";
 import Alert from "@mui/material/Alert";
-import Stack from "@mui/material/Stack";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
+import CloseIcon from "@mui/icons-material/Close";
+import Typography from "@mui/material/Typography";
+import {
+  CenteredColumnStack,
+  CenteredRowStack,
+} from "./components/LayoutComponents";
+import { ArrowButton } from "./components/ArrowButton";
+import { Header } from "./components/Header";
+import IconButton from "@mui/material/IconButton";
+
+const tooltipOffset = {
+  popper: {
+    modifiers: [
+      {
+        name: "offset",
+        options: {
+          offset: [0, -10],
+        },
+      },
+    ],
+  },
+};
 
 // function getTileFromMousePosition(
 //   canvas: HTMLCanvasElement,
@@ -70,13 +85,15 @@ function App() {
   const [canUndo, setCanUndo] = useState<boolean>(false);
   const [hasWon, setHasWon] = useState<boolean>(false);
   const [showSolutionModal, setShowSolutionModal] = useState<boolean>(false);
+  const [isLastShape, setIsLastShape] = useState<boolean>(false);
+  const [numMoves, setNumMoves] = useState<number>(0);
 
   const redraw = (grid: React.RefObject<Grid>) => {
     const canvas = document.getElementById("canvas-grid") as HTMLCanvasElement;
     grid.current.draw(canvas);
     setCanGoToNextShape(!grid.current.hasOverlappingShapes());
     setCanUndo(grid.current.getShapes().length > 1);
-    setHasWon(grid.current.hasWon());
+    setIsLastShape(grid.current.getShapes().length === 8);
   };
 
   const startGame = async () => {
@@ -96,11 +113,17 @@ function App() {
   }, []);
 
   const nextShape = useCallback(() => {
+    setNumMoves(numMoves + 1);
+    if (grid.current.hasWon()) {
+      setHasWon(true);
+      redraw(grid);
+      return;
+    }
     if (!grid.current.hasOverlappingShapes()) {
       grid.current.addShape();
       redraw(grid);
     }
-  }, []);
+  }, [numMoves]);
 
   const moveActiveShape = useCallback((direction: MoveShapeDirection) => {
     grid.current.moveActiveShape(direction);
@@ -116,16 +139,36 @@ function App() {
     redraw(grid);
   };
 
-  const showSolution = () => {
-    setShowSolutionModal(true);
-  };
+  // const showSolution = () => {
+  //   setShowSolutionModal(true);
+  // };
 
   const closeSolutionModal = () => {
     setShowSolutionModal(false);
   };
 
-  const renderSolutionTable = () => {
-    const solutionShapes = grid.current?.getSolutionShapes() || [];
+  // const autoComplete = () => {
+  //   grid.current.autoComplete();
+  //   setHasWon(true);
+  //   redraw(grid);
+  // };
+
+  const restartGame = () => {
+    setGameStarted(false);
+    setHasWon(false);
+    setNumMoves(0);
+    setCanGoToNextShape(true);
+    setCanUndo(false);
+    setIsLastShape(false);
+    setShowSolutionModal(false);
+    grid.current = new Grid();
+    redraw(grid);
+  };
+
+  const renderSolutionTable = (useActualShapes: boolean = false) => {
+    const solutionShapes = useActualShapes
+      ? grid.current?.getShapes() || []
+      : grid.current?.getSolutionShapes() || [];
     if (solutionShapes.length === 0) return null;
 
     // Create an 8x8 grid map to store which color belongs to each cell
@@ -173,11 +216,44 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (hasWon) {
-      // Need to unset active shape when we win, and redraw again
-      grid.current.getActiveShape()?.setIsActive(false);
-      redraw(grid);
-    }
+    if (!hasWon || !grid.current) return;
+
+    // Need to unset active shape when we win, and redraw again
+    const gridInstance = grid.current;
+    gridInstance.getActiveShape()?.setIsActive(false);
+    redraw(grid);
+
+    // Wait a few seconds before starting the kaleidoscope effect
+    const canvas = document.getElementById("canvas-grid") as HTMLCanvasElement;
+    if (!canvas) return;
+
+    let intervalId: number | null = null;
+    let kaleidoscopeCount = 0;
+    const maxKaleidoscopeIterations = 8;
+
+    const timeoutId = setTimeout(() => {
+      // Draw initial kaleidoscope
+      gridInstance.drawKaleidoscope(canvas);
+      kaleidoscopeCount++;
+
+      // Set up interval to redraw kaleidoscope every 1 second
+      intervalId = window.setInterval(() => {
+        if (kaleidoscopeCount < maxKaleidoscopeIterations) {
+          gridInstance.drawKaleidoscope(canvas);
+          kaleidoscopeCount++;
+        } else {
+          // Stop the kaleidoscope and redraw the original grid
+          if (intervalId !== null) clearInterval(intervalId);
+          gridInstance.draw(canvas);
+        }
+      }, 500);
+    }, 500);
+
+    // Cleanup timeout and interval when component unmounts or hasWon changes
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId !== null) clearInterval(intervalId);
+    };
   }, [hasWon]);
 
   // useEffect(() => {
@@ -245,6 +321,7 @@ function App() {
 
     const keyDownHandler = (event: KeyboardEvent) => {
       if (!gameStarted || hasWon) return;
+      event.preventDefault();
 
       switch (event.key) {
         case "r":
@@ -296,6 +373,7 @@ function App() {
 
   return (
     <>
+      <Header />
       <canvas
         id="canvas-grid"
         // +1 for the lines
@@ -304,42 +382,37 @@ function App() {
       ></canvas>
       <div className="controls-container">
         {!gameStarted && !hasWon && (
-          <div>
-            <Button
-              onClick={() => {
-                void startGame();
-              }}
-              variant="outlined"
-              size="large"
-            >
-              Start
-            </Button>
-            <Select
-              value={difficulty}
-              onChange={handleDifficultyChange}
-              size="small"
-            >
-              <MenuItem value={"easy"}>Easy</MenuItem>
-              <MenuItem value={"medium"}>Medium</MenuItem>
-              <MenuItem value={"hard"}>Hard</MenuItem>
-            </Select>
-          </div>
+          <CenteredRowStack spacing={2} width="100%">
+            <Box sx={{ flex: 3 }}>
+              <Button
+                onClick={() => {
+                  void startGame();
+                }}
+                color="primary"
+                variant="contained"
+                size="large"
+                fullWidth
+              >
+                Play
+              </Button>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Select
+                value={difficulty}
+                onChange={handleDifficultyChange}
+                size="small"
+                fullWidth
+              >
+                <MenuItem value={"easy"}>Easy</MenuItem>
+                <MenuItem value={"medium"}>Medium</MenuItem>
+                <MenuItem value={"hard"}>Hard</MenuItem>
+              </Select>
+            </Box>
+          </CenteredRowStack>
         )}
         {gameStarted && !hasWon && (
-          <Stack
-            direction="column"
-            useFlexGap
-            width={"100%"}
-            sx={{ alignItems: "center" }}
-            spacing={2}
-          >
-            <Stack
-              direction="row"
-              useFlexGap
-              width={"100%"}
-              sx={{ alignItems: "center" }}
-              spacing={2}
-            >
+          <CenteredColumnStack>
+            <CenteredRowStack>
               <Button
                 color="primary"
                 variant="contained"
@@ -347,7 +420,7 @@ function App() {
                 disabled={!canGoToNextShape}
                 sx={{ flexGrow: 3 }}
               >
-                Next Shape
+                {isLastShape ? "Finish" : "Next Shape"}
               </Button>
               <Button
                 onClick={undo}
@@ -360,133 +433,146 @@ function App() {
               >
                 Undo
               </Button>
-            </Stack>
-            <Stack
-              direction="row"
-              useFlexGap
-              width={"70%"}
-              sx={{ alignItems: "center" }}
-              spacing={2}
-            >
+            </CenteredRowStack>
+            <CenteredRowStack width="70%">
               {/* Left directional controls */}
-              <Stack
-                direction="column"
-                useFlexGap
-                sx={{ alignItems: "center", flexGrow: 1 }}
-                spacing={0}
-              >
-                <div>
-                  {/* Up */}
-                  <Tooltip title="Move up">
-                    <IconButton onClick={() => moveActiveShape("up")}>
-                      <ArrowUpwardIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-                <div>
-                  {/* Left/Right */}
-                  <Tooltip title="Move left">
-                    <IconButton onClick={() => moveActiveShape("left")}>
-                      <ArrowBackIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Move right">
-                    <IconButton onClick={() => moveActiveShape("right")}>
-                      <ArrowForwardIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-                <div>
-                  {/* Down */}
-                  <Tooltip title="Move down">
-                    <IconButton onClick={() => moveActiveShape("down")}>
-                      <ArrowDownwardIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-              </Stack>
+              <CenteredColumnStack spacing={0.5} sx={{ flexGrow: 1 }}>
+                {/* Up */}
+                <CenteredRowStack spacing={0.5}>
+                  <ArrowButton
+                    direction="up"
+                    onClick={() => moveActiveShape("up")}
+                  />
+                </CenteredRowStack>
+                {/* Left/Right */}
+                <CenteredRowStack spacing={0.5}>
+                  <ArrowButton
+                    direction="left"
+                    onClick={() => moveActiveShape("left")}
+                  />
+                  <ArrowButton
+                    direction="right"
+                    onClick={() => moveActiveShape("right")}
+                  />
+                </CenteredRowStack>
+                {/* Down */}
+                <CenteredRowStack spacing={0.5}>
+                  <ArrowButton
+                    direction="down"
+                    onClick={() => moveActiveShape("down")}
+                  />
+                </CenteredRowStack>
+              </CenteredColumnStack>
               {/* Right directional controls */}
-              <Stack
-                direction="column"
-                useFlexGap
-                sx={{ alignItems: "center", flexGrow: 1 }}
-                spacing={1}
-              >
-                <Stack
-                  direction="row"
-                  useFlexGap
-                  sx={{ alignItems: "center" }}
-                  spacing={1}
-                >
+              <CenteredColumnStack spacing={1} sx={{ flexGrow: 1 }}>
+                <CenteredRowStack spacing={1}>
                   {/* Rotate controls */}
-                  <Tooltip title="Rotate right">
-                    <IconButton onClick={() => rotateActiveShape(true)}>
-                      <Rotate90DegreesCwIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Rotate left">
-                    <IconButton onClick={() => rotateActiveShape(false)}>
+                  <Tooltip
+                    title="Rotate left"
+                    placement="top"
+                    slotProps={tooltipOffset}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => rotateActiveShape(false)}
+                    >
                       <Rotate90DegreesCwIcon
                         color="primary"
                         className={"rotate-left"}
                       />
-                    </IconButton>
+                    </Button>
                   </Tooltip>
-                </Stack>
-                <Stack
-                  direction="row"
-                  useFlexGap
-                  sx={{ alignItems: "center" }}
-                  spacing={1}
-                >
+                  <Tooltip
+                    title="Rotate right"
+                    placement="top"
+                    slotProps={tooltipOffset}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => rotateActiveShape(true)}
+                    >
+                      <Rotate90DegreesCwIcon color="primary" />
+                    </Button>
+                  </Tooltip>
+                </CenteredRowStack>
+                <CenteredRowStack spacing={1}>
                   {/* Flip controls */}
-                  <Tooltip title="Flip horizontal">
-                    <IconButton onClick={() => flipActiveShape(true)}>
+                  <Tooltip
+                    title="Flip horizontal"
+                    placement="bottom"
+                    slotProps={tooltipOffset}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => flipActiveShape(true)}
+                    >
                       <SwapHorizIcon color="primary" />
-                    </IconButton>
+                    </Button>
                   </Tooltip>
-                  <Tooltip title="Flip vertical">
-                    <IconButton onClick={() => flipActiveShape(false)}>
+                  <Tooltip
+                    title="Flip vertical"
+                    placement="bottom"
+                    slotProps={tooltipOffset}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() => flipActiveShape(false)}
+                    >
                       <SwapVertIcon color="primary" />
-                    </IconButton>
+                    </Button>
                   </Tooltip>
-                </Stack>
-              </Stack>
-            </Stack>
-            <Button onClick={showSolution}>Show Solution</Button>
-          </Stack>
+                </CenteredRowStack>
+              </CenteredColumnStack>
+            </CenteredRowStack>
+            {/* <Button onClick={showSolution}>Show Solution</Button>
+            <Button onClick={autoComplete}>Auto complete</Button> */}
+          </CenteredColumnStack>
         )}
-        {hasWon && <Alert severity="success">Congratulations, you win!</Alert>}
-      </div>
-      <Modal
-        open={showSolutionModal}
-        onClose={closeSolutionModal}
-        aria-labelledby="solution-modal-title"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            outline: "none",
-          }}
-        >
-          <h2 id="solution-modal-title" style={{ textAlign: "center" }}>
-            Solution
-          </h2>
-          {renderSolutionTable()}
-          <Box sx={{ mt: 2, textAlign: "center" }}>
-            <Button onClick={closeSolutionModal} variant="contained">
-              Close
+        {hasWon && (
+          <CenteredColumnStack spacing={2}>
+            <Alert severity="success">
+              Congratulations, you won in {numMoves} moves!
+            </Alert>
+            <Button color="primary" variant="contained" onClick={restartGame}>
+              Play again
             </Button>
+            {/* <Box sx={{ mt: 2, textAlign: "center" }}>
+              <h2>Solution</h2>
+              {renderSolutionTable(true)}
+            </Box> */}
+          </CenteredColumnStack>
+        )}
+        {showSolutionModal && (
+          <Box
+            sx={{
+              position: "relative",
+              bgcolor: "background.paper",
+              boxShadow: 3,
+              p: 2,
+              borderRadius: 2,
+              mt: 3,
+              maxWidth: "400px",
+              mx: "auto",
+            }}
+          >
+            <IconButton
+              onClick={closeSolutionModal}
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+              }}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+            <Typography variant="h5" sx={{ textAlign: "center", marginTop: 0 }}>
+              Solution
+            </Typography>
+            {renderSolutionTable()}
           </Box>
-        </Box>
-      </Modal>
+        )}
+      </div>
     </>
   );
 }

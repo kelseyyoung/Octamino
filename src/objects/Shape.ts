@@ -15,7 +15,7 @@ function generateRandomColor(): string {
     .padStart(6, "0")}`;
 }
 
-const COLORS = [
+export const COLORS = [
   "#FD9301",
   "#FFFF00",
   "#23FA00",

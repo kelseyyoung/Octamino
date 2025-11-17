@@ -1,8 +1,14 @@
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  margin: 0;
+  padding: 0;
   background-color: #ccc;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .controls-container {
@@ -11,6 +17,7 @@ body {
   align-items: center;
   flex-direction: column;
   margin: 0 16px;
+  min-width: 380px;
 }
 
 .rotate-left {

@@ -1,4 +1,4 @@
-import { Shape } from "./Shape";
+import { Shape, COLORS } from "./Shape";
 
 export const TILE_SIZE = 50;
 // Padding on left & right of the grid
@@ -17,11 +17,54 @@ export class Grid {
     this.shapesOnGrid = [];
   }
 
+  private randomizeShape(shape: Shape): void {
+    // Random rotation (0-3 times, each rotation is 90 degrees)
+    const numRotations = Math.floor(Math.random() * 4);
+    for (let i = 0; i < numRotations; i++) {
+      shape.rotate(true);
+    }
+
+    // Random flips (both horizontal and vertical, independently)
+    if (Math.random() < 0.5) {
+      shape.flip(true); // horizontal flip
+    }
+    if (Math.random() < 0.5) {
+      shape.flip(false); // vertical flip
+    }
+
+    // Get the bounds of the shape after rotation/flipping
+    const tiles = shape.getTiles();
+    const xs = tiles.map((tile) => tile.getX());
+    const ys = tiles.map((tile) => tile.getY());
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    // Calculate the width and height of the shape
+    const shapeWidth = maxX - minX;
+    const shapeHeight = maxY - minY;
+
+    // Generate a random position that keeps the shape within bounds
+    const maxPossibleX = GRID_TILES - 1 - shapeWidth;
+    const maxPossibleY = GRID_TILES - 1 - shapeHeight;
+    const randomX = Math.floor(Math.random() * (maxPossibleX + 1));
+    const randomY = Math.floor(Math.random() * (maxPossibleY + 1));
+
+    // Calculate the offset needed to move the shape to the random position
+    const deltaX = randomX - minX;
+    const deltaY = randomY - minY;
+
+    // Move the shape to the random position
+    shape.interpolate(deltaX, deltaY);
+  }
+
   async startGame(ranking: "easy" | "medium" | "hard") {
     // this.initialShape = Shape.generateRandomShape();
     this.allShapes = await Shape.generateShapesFromRanking(ranking);
     this.initialShape = this.allShapes[0];
     const nextShape = Shape.duplicate(this.initialShape);
+    this.randomizeShape(nextShape);
     nextShape.setIsActive(true);
     this.shapesOnGrid.push(nextShape);
   }
@@ -40,6 +83,7 @@ export class Grid {
       const nextShape = Shape.duplicate(this.initialShape);
       // Set the next correct color
       nextShape.setColor(this.allShapes[this.shapesOnGrid.length].getColor());
+      this.randomizeShape(nextShape);
       nextShape.setIsActive(true);
       this.shapesOnGrid.push(nextShape);
     }
@@ -199,6 +243,79 @@ export class Grid {
 
   getSolutionShapes(): Shape[] {
     return this.allShapes;
+  }
+
+  autoComplete() {
+    // Set the shapes on grid to all the solution shapes
+    this.shapesOnGrid = [...this.allShapes];
+    // Deactivate all shapes since the puzzle is complete
+    this.shapesOnGrid.forEach((shape) => shape.setIsActive(false));
+  }
+
+  drawKaleidoscope(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear the grid
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fill the grid background with white
+    ctx.fillStyle = "white";
+    ctx.fillRect(
+      GRID_PADDING,
+      GRID_PADDING,
+      GRID_TILES * TILE_SIZE,
+      GRID_TILES * TILE_SIZE
+    );
+
+    // Draw the grid lines
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= GRID_TILES; i++) {
+      // Vertical lines
+      ctx.beginPath();
+      ctx.moveTo(GRID_PADDING + i * TILE_SIZE, GRID_PADDING);
+      ctx.lineTo(
+        GRID_PADDING + i * TILE_SIZE,
+        GRID_PADDING + GRID_TILES * TILE_SIZE
+      );
+      ctx.stroke();
+
+      // Horizontal lines
+      ctx.beginPath();
+      ctx.moveTo(GRID_PADDING, GRID_PADDING + i * TILE_SIZE);
+      ctx.lineTo(
+        GRID_PADDING + GRID_TILES * TILE_SIZE,
+        GRID_PADDING + i * TILE_SIZE
+      );
+      ctx.stroke();
+    }
+
+    // Create an array with each color appearing 8 times (total 64)
+    const colorArray: string[] = [];
+    for (const color of COLORS) {
+      for (let i = 0; i < 8; i++) {
+        colorArray.push(color);
+      }
+    }
+
+    // Shuffle the color array using Fisher-Yates shuffle
+    for (let i = colorArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [colorArray[i], colorArray[j]] = [colorArray[j], colorArray[i]];
+    }
+
+    // Draw each tile with a random color
+    let colorIndex = 0;
+    for (let row = 0; row < GRID_TILES; row++) {
+      for (let col = 0; col < GRID_TILES; col++) {
+        const x = GRID_PADDING + col * TILE_SIZE;
+        const y = GRID_PADDING + row * TILE_SIZE;
+        ctx.fillStyle = colorArray[colorIndex];
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        colorIndex++;
+      }
+    }
   }
 
   draw(canvas: HTMLCanvasElement) {
