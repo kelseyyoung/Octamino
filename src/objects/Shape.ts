@@ -128,6 +128,45 @@ export class Shape {
     return { shapes, puzzleIndex };
   }
 
+  static async generateShapesFromPuzzleIndex(
+    puzzleIndex: number
+  ): Promise<{ shapes: Shape[]; puzzleIndex: number }> {
+    // Read the Ranking.txt file
+    await loadRankings();
+
+    const lines = rankings.trim().split("\n");
+    // puzzleIndex is 1-based, convert to 0-based for array access
+    const lineIndex = puzzleIndex - 1;
+
+    if (lineIndex < 0 || lineIndex >= lines.length) {
+      throw new Error(
+        `Invalid puzzle index: ${puzzleIndex}. Must be between 1 and ${lines.length}`
+      );
+    }
+
+    const selectedLine = lines[lineIndex];
+    const parts = selectedLine.trim().split(" ");
+
+    // Create all 8 shapes and put them in an array
+    const shapes: Shape[] = [];
+
+    // Shuffle the colors array to randomize which color goes to which shape
+    const shuffledColors = [...COLORS].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < 8; i++) {
+      const positions: { x: number; y: number }[] = [];
+      // Each shape gets 8 tiles from parts[i*8] to parts[i*8+7]
+      for (let j = 0; j < 8; j++) {
+        const index = parseInt(parts[i * 8 + j]);
+        const x = index % 8;
+        const y = Math.floor(index / 8);
+        positions.push({ x, y });
+      }
+      shapes.push(new Shape(positions, shuffledColors[i]));
+    }
+    return { shapes, puzzleIndex };
+  }
+
   static duplicate(s: Shape): Shape {
     return new Shape(
       s.getTiles().map((tile: Tile) => {

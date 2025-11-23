@@ -18,6 +18,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import Typography from "@mui/material/Typography";
 import Slide from "@mui/material/Slide";
 import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
 import {
   CenteredColumnStack,
   CenteredRowStack,
@@ -83,6 +85,7 @@ function App() {
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
     "easy"
   );
+  const [puzzleNumber, setPuzzleNumber] = useState<string>("");
   const [canGoToNextShape, setCanGoToNextShape] = useState<boolean>(true);
   const [canUndo, setCanUndo] = useState<boolean>(false);
   const [hasWon, setHasWon] = useState<boolean>(false);
@@ -118,9 +121,21 @@ function App() {
   const startGame = async () => {
     setIsLoading(true);
     try {
-      await grid.current.startGame(difficulty);
+      // If puzzleNumber is provided and valid, use it; otherwise use difficulty
+      const puzzleNum = parseInt(puzzleNumber);
+      if (puzzleNumber && !isNaN(puzzleNum)) {
+        if (puzzleNum < 1 || puzzleNum > 62642) {
+          setIsLoading(false);
+          return;
+        }
+        await grid.current.startGameWithPuzzleIndex(puzzleNum);
+      } else {
+        await grid.current.startGame(difficulty);
+      }
       setGameStarted(true);
       redraw(grid);
+    } catch (error) {
+      console.error("Error starting game:", error);
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +210,7 @@ function App() {
     setIsLastShape(false);
     setShowSolutionModal(false);
     setShowWinModal(false);
+    setPuzzleNumber("");
     grid.current = new Grid();
     redraw(grid);
   };
@@ -569,8 +585,78 @@ function App() {
         }}
       >
         {!gameStarted && !hasWon && (
-          <CenteredRowStack spacing={2} width="100%">
-            <Box sx={{ flexGrow: 1 }}>
+          <CenteredColumnStack spacing={2} width="100%">
+            {/* Row with input box and difficulty dropdown */}
+            <CenteredRowStack spacing={1} width="100%" alignItems="flex-start">
+              <Box sx={{ flexGrow: 1, flexBasis: 0 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 0.5, fontWeight: 500, color: "text.primary" }}
+                >
+                  Puzzle #
+                </Typography>
+                <TextField
+                  value={puzzleNumber}
+                  onChange={(e) => setPuzzleNumber(e.target.value)}
+                  placeholder="1 - 62642"
+                  size="small"
+                  fullWidth
+                  disabled={isLoading}
+                  error={
+                    puzzleNumber !== "" &&
+                    (isNaN(Number(puzzleNumber)) ||
+                      Number(puzzleNumber) < 1 ||
+                      Number(puzzleNumber) > 62462)
+                  }
+                  sx={{
+                    "& .MuiInputBase-input::placeholder": {
+                      opacity: 0.6,
+                    },
+                  }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">#</InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Box>
+              <Typography
+                sx={{
+                  px: 1,
+                  fontFamily: '"American Typewriter", "Courier New", monospace',
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  fontWeight: 500,
+                  color: "text.primary",
+                  flexShrink: 0,
+                  mt: 3,
+                }}
+              >
+                or
+              </Typography>
+              <Box sx={{ flexGrow: 1, flexBasis: 0 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 0.5, fontWeight: 500, color: "text.primary" }}
+                >
+                  Difficulty
+                </Typography>
+                <Select
+                  value={difficulty}
+                  onChange={handleDifficultyChange}
+                  size="small"
+                  fullWidth
+                  disabled={isLoading || !!puzzleNumber}
+                >
+                  <MenuItem value={"easy"}>Easy</MenuItem>
+                  <MenuItem value={"medium"}>Medium</MenuItem>
+                  <MenuItem value={"hard"}>Hard</MenuItem>
+                </Select>
+              </Box>
+            </CenteredRowStack>
+            {/* Start button below */}
+            <Box sx={{ width: "100%" }}>
               <Button
                 onClick={() => {
                   void startGame();
@@ -579,7 +665,13 @@ function App() {
                 variant="contained"
                 size={buttonSize}
                 fullWidth
-                disabled={isLoading}
+                disabled={
+                  isLoading ||
+                  (puzzleNumber !== "" &&
+                    (isNaN(Number(puzzleNumber)) ||
+                      Number(puzzleNumber) < 1 ||
+                      Number(puzzleNumber) > 62462))
+                }
                 sx={{
                   boxShadow: "none",
                   "&:hover": {
@@ -594,20 +686,7 @@ function App() {
                 )}
               </Button>
             </Box>
-            <Box sx={{ width: "120px", flexShrink: 0 }}>
-              <Select
-                value={difficulty}
-                onChange={handleDifficultyChange}
-                size="small"
-                fullWidth
-                disabled={isLoading}
-              >
-                <MenuItem value={"easy"}>Easy</MenuItem>
-                <MenuItem value={"medium"}>Medium</MenuItem>
-                <MenuItem value={"hard"}>Hard</MenuItem>
-              </Select>
-            </Box>
-          </CenteredRowStack>
+          </CenteredColumnStack>
         )}
         {gameStarted && !hasWon && (
           <CenteredColumnStack>

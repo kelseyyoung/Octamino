@@ -73,6 +73,17 @@ export class Grid {
     this.shapesOnGrid.push(nextShape);
   }
 
+  async startGameWithPuzzleIndex(puzzleIndex: number) {
+    const result = await Shape.generateShapesFromPuzzleIndex(puzzleIndex);
+    this.allShapes = result.shapes;
+    this.puzzleIndex = result.puzzleIndex;
+    this.initialShape = this.allShapes[0];
+    const nextShape = Shape.duplicate(this.initialShape);
+    this.randomizeShape(nextShape);
+    nextShape.setIsActive(true);
+    this.shapesOnGrid.push(nextShape);
+  }
+
   addShape() {
     if (!this.initialShape) {
       console.error("Tried to add shape before starting the game!");
