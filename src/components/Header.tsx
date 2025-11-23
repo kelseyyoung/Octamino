@@ -51,7 +51,7 @@ export const Header = ({ onAutoComplete, gameStarted }: HeaderProps) => {
         {/* Centered logo */}
         <Box
           component="img"
-          src={`${import.meta.env.BASE_URL}logo.png`}
+          src={`${import.meta.env.BASE_URL}NewLogo.png`}
           alt="Logo"
           sx={{
             height: { xs: 40, sm: 50 }, // Smaller logo on mobile, larger on desktop
