@@ -33,7 +33,7 @@ export function WinModal({
         sx={{
           bgcolor: "background.paper",
           boxShadow: 3,
-          p: 4,
+          p: 3,
           borderRadius: 2,
           maxWidth: "600px",
           mx: "auto",

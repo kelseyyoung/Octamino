@@ -3,7 +3,7 @@
  * Handles canvas setup, drawing, and visual effects
  */
 
-import { useCallback, useEffect, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import type { Grid } from "../objects/Grid";
 
 export type UseCanvasSetupProps = {
@@ -116,8 +116,20 @@ export function useKaleidoscopeEffect({
   redraw,
   setShowWinModal,
 }: UseKaleidoscopeEffectProps) {
+  const hasPlayedAnimation = useRef(false);
+
   useEffect(() => {
-    if (!hasWon || !grid.current) return;
+    // Reset the flag when a new game starts (hasWon becomes false)
+    if (!hasWon) {
+      hasPlayedAnimation.current = false;
+      return;
+    }
+
+    // Don't play animation if already played for this win
+    if (!grid.current || hasPlayedAnimation.current) return;
+
+    // Mark that we're playing the animation
+    hasPlayedAnimation.current = true;
 
     // Need to unset active shape when we win, and redraw again
     const gridInstance = grid.current;
@@ -156,7 +168,7 @@ export function useKaleidoscopeEffect({
       }, 500);
     }, 500);
 
-    // Cleanup timeout and interval when component unmounts or hasWon changes
+    // Cleanup timeout and interval when component unmounts
     return () => {
       clearTimeout(timeoutId);
       if (intervalId !== null) clearInterval(intervalId);
