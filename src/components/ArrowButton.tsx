@@ -15,19 +15,24 @@ const directionConfig: Record<
   MoveShapeDirection,
   {
     icon: typeof ArrowUpwardIcon;
+    ariaLabel: string;
   }
 > = {
   up: {
     icon: ArrowUpwardIcon,
+    ariaLabel: "Move up (W or Arrow Up)",
   },
   down: {
     icon: ArrowDownwardIcon,
+    ariaLabel: "Move down (S or Arrow Down)",
   },
   left: {
     icon: ArrowBackIcon,
+    ariaLabel: "Move left (A or Arrow Left)",
   },
   right: {
     icon: ArrowForwardIcon,
+    ariaLabel: "Move right (D or Arrow Right)",
   },
 };
 
@@ -44,6 +49,7 @@ export const ArrowButton = ({
       variant="outlined"
       size={size}
       onClick={onClick}
+      aria-label={config.ariaLabel}
       sx={{
         minWidth: "auto",
         paddingX: size === "large" ? 2 : size === "medium" ? 1.75 : 1.5,

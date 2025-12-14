@@ -1,9 +1,9 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GradingIcon from "@mui/icons-material/Grading";
 import Backdrop from "@mui/material/Backdrop";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,18 +15,26 @@ type HeaderProps = {
   onAutoComplete: () => void;
   onRestart: () => void;
   gameStarted: boolean;
+  showModeModal: boolean;
 };
 
 export const Header = ({
   onAutoComplete,
   onRestart,
   gameStarted,
+  showModeModal,
 }: HeaderProps) => {
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [showRestartDialog, setShowRestartDialog] = useState<boolean>(false);
 
   const handleRestartClick = () => {
-    setShowRestartDialog(true);
+    if (gameStarted) {
+      // Show confirmation dialog if game is in progress
+      setShowRestartDialog(true);
+    } else {
+      // Just go back if we're only on the start screen
+      onRestart();
+    }
   };
 
   const handleRestartConfirm = () => {
@@ -52,16 +60,39 @@ export const Header = ({
           boxSizing: "border-box",
         }}
       >
-        {/* Auto and Restart buttons in top left - only show when game is started */}
-        {gameStarted && (
+        {/* Back button - show when mode modal is hidden */}
+        {!showModeModal && (
           <Box
             sx={{
               position: "absolute",
               left: 8,
               top: "50%",
               transform: "translateY(-50%)",
-              display: "flex",
-              gap: 1,
+            }}
+          >
+            <Button
+              onClick={handleRestartClick}
+              variant="outlined"
+              size="small"
+              sx={{
+                minWidth: "auto",
+                px: 1.5,
+              }}
+              aria-label="Restart game"
+            >
+              <ArrowBackIcon fontSize="small" />
+            </Button>
+          </Box>
+        )}
+
+        {/* Auto button - only show when game is started */}
+        {gameStarted && (
+          <Box
+            sx={{
+              position: "absolute",
+              left: 60,
+              top: "50%",
+              transform: "translateY(-50%)",
             }}
           >
             <Button
@@ -72,21 +103,9 @@ export const Header = ({
                 minWidth: "auto",
                 px: 1.5,
               }}
-              aria-label="autocomplete"
+              aria-label="Autocomplete puzzle"
             >
-              Auto
-            </Button>
-            <Button
-              onClick={handleRestartClick}
-              variant="outlined"
-              size="small"
-              sx={{
-                minWidth: "auto",
-                px: 1.5,
-              }}
-              aria-label="restart game"
-            >
-              <ArrowBackIcon fontSize="small" />
+              <GradingIcon fontSize="small" />
             </Button>
           </Box>
         )}
@@ -103,19 +122,21 @@ export const Header = ({
         />
 
         {/* Help button in top right */}
-        <IconButton
+        <Button
           onClick={() => setShowHelpModal(true)}
+          variant="outlined"
           sx={{
             position: "absolute",
             right: 8,
             top: "50%",
             transform: "translateY(-50%)",
+            minWidth: "auto",
           }}
           aria-label="help"
           size="small"
         >
-          <HelpOutlineIcon fontSize="small" />
-        </IconButton>
+          <QuestionMarkIcon fontSize="small" />
+        </Button>
       </Box>
 
       {/* Help Modal with Backdrop */}
@@ -125,7 +146,10 @@ export const Header = ({
         sx={{ zIndex: 999 }}
       >
         <Box onClick={(e) => e.stopPropagation()}>
-          <HelpModal onClose={() => setShowHelpModal(false)} />
+          <HelpModal
+            isVisible={showHelpModal}
+            onClose={() => setShowHelpModal(false)}
+          />
         </Box>
       </Backdrop>
 
@@ -138,7 +162,7 @@ export const Header = ({
       >
         <DialogContent>
           <DialogContentText id="restart-dialog-description">
-            Go back to the home screen?
+            Go back to the start screen?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -39,6 +39,7 @@ export type UseKeyboardControlsProps = {
   flipActiveShape: (horizontal: boolean) => void;
   nextShape: () => void;
   moveActiveShape: (direction: MoveShapeDirection) => void;
+  undo: () => void;
 };
 
 /**
@@ -51,6 +52,7 @@ export function useKeyboardControls({
   flipActiveShape,
   nextShape,
   moveActiveShape,
+  undo,
 }: UseKeyboardControlsProps) {
   useEffect(() => {
     const keyDownHandler = (event: KeyboardEvent) => {
@@ -67,6 +69,7 @@ export function useKeyboardControls({
         "f",
         "v",
         "n",
+        "u",
         "w",
         "s",
         "a",
@@ -95,6 +98,9 @@ export function useKeyboardControls({
           break;
         case "n":
           nextShape();
+          break;
+        case "u":
+          undo();
           break;
         case "w":
         case "ArrowUp":
@@ -126,6 +132,7 @@ export function useKeyboardControls({
     flipActiveShape,
     nextShape,
     moveActiveShape,
+    undo,
   ]);
 }
 

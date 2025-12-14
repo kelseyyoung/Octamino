@@ -9,13 +9,33 @@ import IconButton from "@mui/material/IconButton";
 import Slide from "@mui/material/Slide";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
+import TimerOutlined from "@mui/icons-material/TimerOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { formatTime } from "../utils/gameUtils";
 import type { Shape } from "../objects/Shape";
+
+/**
+ * Calculate star rating based on completion time (in seconds)
+ * 4 stars: < 90 seconds (< 1.5 minutes)
+ * 3 stars: 90-179 seconds (1.5-3 minutes)
+ * 2 stars: 180-269 seconds (3-4.5 minutes)
+ * 1 star: 270-360 seconds (4.5-6 minutes)
+ * 0 stars: > 360 seconds (> 6 minutes)
+ */
+function getStarRating(elapsedTime: number): number {
+  if (elapsedTime < 90) return 4;
+  if (elapsedTime < 180) return 3;
+  if (elapsedTime < 270) return 2;
+  if (elapsedTime <= 360) return 1;
+  return 0;
+}
 
 export type WinModalProps = {
   show: boolean;
   elapsedTime: number;
   puzzleIndex: number;
+  difficulty: "Easy" | "Medium" | "Hard";
   buttonSize: "small" | "medium" | "large";
   onPlayAgain: () => void;
 };
@@ -24,9 +44,12 @@ export function WinModal({
   show,
   elapsedTime,
   puzzleIndex,
+  difficulty,
   buttonSize,
   onPlayAgain,
 }: WinModalProps) {
+  const stars = getStarRating(elapsedTime);
+
   return (
     <Slide direction="up" in={show} timeout={500}>
       <Box
@@ -36,6 +59,7 @@ export function WinModal({
           p: 3,
           borderRadius: 2,
           maxWidth: "600px",
+          minWidth: "300px",
           mx: "auto",
           textAlign: "center",
           mb: 2,
@@ -44,9 +68,67 @@ export function WinModal({
         <Typography variant="h4" component="h2" gutterBottom>
           Octamino!
         </Typography>
-        <Typography variant="h6" sx={{ mb: 3 }}>
-          You solved puzzle #{puzzleIndex} in {formatTime(elapsedTime)}
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-evenly",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
+          <Box>
+            <Typography variant="body1">#{puzzleIndex}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {difficulty}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.5,
+                }}
+              >
+                <TimerOutlined sx={{ mt: "-2px" }} fontSize="small" />
+                <Typography variant="body1">
+                  {formatTime(elapsedTime)}
+                </Typography>
+              </Box>
+              <Box
+                sx={{ display: "flex", justifyContent: "center", gap: 0.25 }}
+              >
+                {Array.from({ length: 4 }, (_, index) => {
+                  return index < stars ? (
+                    <Box
+                      key={index}
+                      sx={{ position: "relative", display: "inline-flex" }}
+                    >
+                      <StarIcon fontSize="small" sx={{ color: "gold" }} />
+                      <StarBorderIcon
+                        fontSize="small"
+                        sx={{
+                          color: "text.secondary",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <StarBorderIcon
+                      key={index}
+                      fontSize="small"
+                      sx={{ color: "text.secondary" }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
         <Button
           color="primary"
           variant="contained"

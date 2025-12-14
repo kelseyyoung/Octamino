@@ -70,7 +70,11 @@ export class Shape {
 
   static async generateShapesFromRanking(
     ranking: "easy" | "medium" | "hard"
-  ): Promise<{ shapes: Shape[]; puzzleIndex: number }> {
+  ): Promise<{
+    shapes: Shape[];
+    puzzleIndex: number;
+    ranking: "Easy" | "Medium" | "Hard";
+  }> {
     // Read the Ranking.txt file
     await loadRankings();
 
@@ -123,12 +127,16 @@ export class Shape {
       }
       shapes.push(new Shape(positions, shuffledColors[i]));
     }
-    return { shapes, puzzleIndex };
+    const rankingLabel = (ranking.charAt(0).toUpperCase() +
+      ranking.slice(1)) as "Easy" | "Medium" | "Hard";
+    return { shapes, puzzleIndex, ranking: rankingLabel };
   }
 
-  static async generateShapesFromPuzzleIndex(
-    puzzleIndex: number
-  ): Promise<{ shapes: Shape[]; puzzleIndex: number }> {
+  static async generateShapesFromPuzzleIndex(puzzleIndex: number): Promise<{
+    shapes: Shape[];
+    puzzleIndex: number;
+    ranking: "Easy" | "Medium" | "Hard";
+  }> {
     // Read the Ranking.txt file
     await loadRankings();
 
@@ -144,6 +152,17 @@ export class Shape {
 
     const selectedLine = lines[lineIndex];
     const parts = selectedLine.trim().split(" ");
+    const score = parseInt(parts[parts.length - 1]);
+
+    // Determine ranking based on score
+    let ranking: "Easy" | "Medium" | "Hard";
+    if (score >= 13) {
+      ranking = "Easy";
+    } else if (score >= 7) {
+      ranking = "Medium";
+    } else {
+      ranking = "Hard";
+    }
 
     // Create all 8 shapes and put them in an array
     const shapes: Shape[] = [];
@@ -162,7 +181,7 @@ export class Shape {
       }
       shapes.push(new Shape(positions, shuffledColors[i]));
     }
-    return { shapes, puzzleIndex };
+    return { shapes, puzzleIndex, ranking };
   }
 
   static duplicate(s: Shape): Shape {

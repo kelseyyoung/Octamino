@@ -6,6 +6,7 @@ import { Header } from "./components/Header";
 import { GameStartScreen } from "./components/GameStartScreen";
 import { GameControls } from "./components/GameControls";
 import { WinModal, SolutionModal } from "./components/Modals";
+import { GameModeModal } from "./components/GameModeModal";
 import { useGameActions } from "./hooks/useGameActions";
 import {
   useCanvasSetup,
@@ -27,7 +28,10 @@ function App() {
   // Game state
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
+  const [showModeModal, setShowModeModal] = useState<boolean>(true);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
+    "easy"
+  );
   const [puzzleNumber, setPuzzleNumber] = useState<string>("");
   const [canGoToNextShape, setCanGoToNextShape] = useState<boolean>(true);
   const [canUndo, setCanUndo] = useState<boolean>(false);
@@ -41,9 +45,15 @@ function App() {
   const [dynamicTileSize, setDynamicTileSize] = useState<number>(TILE_SIZE);
   const [dynamicPadding, setDynamicPadding] = useState<number>(GRID_PADDING);
   const [gridSize, setGridSize] = useState<number>(0);
-  const [useVerticalControlLayout, setUseVerticalControlLayout] = useState<boolean>(false);
-  const [buttonSize, setButtonSize] = useState<"small" | "medium" | "large">("medium");
-  const [controlSpacing, setControlSpacing] = useState<{ inner: number; outer: number }>({
+  const [useVerticalControlLayout, setUseVerticalControlLayout] =
+    useState<boolean>(false);
+  const [buttonSize, setButtonSize] = useState<"small" | "medium" | "large">(
+    "medium"
+  );
+  const [controlSpacing, setControlSpacing] = useState<{
+    inner: number;
+    outer: number;
+  }>({
     inner: 1,
     outer: 3,
   });
@@ -84,6 +94,7 @@ function App() {
     flipActiveShape: gameActions.flipActiveShape,
     nextShape: gameActions.nextShape,
     moveActiveShape: gameActions.moveActiveShape,
+    undo: gameActions.undo,
   });
   useResponsiveLayout({
     setDynamicTileSize,
@@ -127,7 +138,16 @@ function App() {
     setShowSolutionModal(false);
     setShowWinModal(false);
     setPuzzleNumber("");
+    setShowModeModal(true);
     gameActions.restartGame();
+  };
+
+  const handleModeSelect = (mode: "daily" | "freeplay") => {
+    setShowModeModal(false);
+    // Daily mode not implemented yet, only freeplay works
+    if (mode === "freeplay") {
+      // User can now see the game start screen
+    }
   };
 
   const closeSolutionModal = () => {
@@ -136,16 +156,32 @@ function App() {
 
   return (
     <>
-      <Header 
-        onAutoComplete={gameActions.autoComplete} 
+      <Header
+        onAutoComplete={gameActions.autoComplete}
         onRestart={restartGame}
-        gameStarted={gameStarted} 
+        gameStarted={gameStarted}
+        showModeModal={showModeModal}
       />
-      
+
       <Box sx={{ position: "relative", display: "inline-block" }}>
         <canvas id="canvas-grid"></canvas>
+
+        {/* Game Mode Modal */}
+        {showModeModal && !gameStarted && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10,
+            }}
+          >
+            <GameModeModal onSelectMode={handleModeSelect} />
+          </Box>
+        )}
       </Box>
-      
+
       <div
         className="controls-container"
         style={{
@@ -153,7 +189,7 @@ function App() {
           minWidth: "320px",
         }}
       >
-        {!gameStarted && !hasWon && (
+        {!gameStarted && !hasWon && !showModeModal && (
           <GameStartScreen
             puzzleNumber={puzzleNumber}
             setPuzzleNumber={setPuzzleNumber}
@@ -164,10 +200,11 @@ function App() {
             onStartGame={() => void startGame()}
           />
         )}
-        
+
         {gameStarted && !hasWon && (
           <GameControls
             puzzleIndex={grid.current.getPuzzleIndex()}
+            difficultyLabel={grid.current.getDifficulty()}
             elapsedTime={elapsedTime}
             canGoToNextShape={canGoToNextShape}
             canUndo={canUndo}
@@ -182,7 +219,7 @@ function App() {
             onFlipActiveShape={gameActions.flipActiveShape}
           />
         )}
-        
+
         {showSolutionModal && (
           <SolutionModal
             show={showSolutionModal}
@@ -190,12 +227,13 @@ function App() {
             onClose={closeSolutionModal}
           />
         )}
-        
+
         {showWinModal && (
           <WinModal
             show={showWinModal}
             elapsedTime={elapsedTime}
             puzzleIndex={grid.current.getPuzzleIndex()}
+            difficulty={grid.current.getDifficulty()}
             buttonSize={buttonSize}
             onPlayAgain={restartGame}
           />

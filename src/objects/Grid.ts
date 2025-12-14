@@ -12,11 +12,13 @@ export class Grid {
   private allShapes: Shape[];
   private shapesOnGrid: Shape[];
   private puzzleIndex: number;
+  private difficulty: "Easy" | "Medium" | "Hard";
   constructor() {
     this.initialShape = null;
     this.allShapes = [];
     this.shapesOnGrid = [];
     this.puzzleIndex = 0;
+    this.difficulty = "Easy";
   }
 
   private randomizeShape(shape: Shape): void {
@@ -66,6 +68,7 @@ export class Grid {
     const result = await Shape.generateShapesFromRanking(ranking);
     this.allShapes = result.shapes;
     this.puzzleIndex = result.puzzleIndex;
+    this.difficulty = result.ranking;
     this.initialShape = this.allShapes[0];
     const nextShape = Shape.duplicate(this.initialShape);
     this.randomizeShape(nextShape);
@@ -77,6 +80,7 @@ export class Grid {
     const result = await Shape.generateShapesFromPuzzleIndex(puzzleIndex);
     this.allShapes = result.shapes;
     this.puzzleIndex = result.puzzleIndex;
+    this.difficulty = result.ranking;
     this.initialShape = this.allShapes[0];
     const nextShape = Shape.duplicate(this.initialShape);
     this.randomizeShape(nextShape);
@@ -122,6 +126,10 @@ export class Grid {
 
   getPuzzleIndex() {
     return this.puzzleIndex;
+  }
+
+  getDifficulty() {
+    return this.difficulty;
   }
 
   moveActiveShape(direction: MoveShapeDirection) {

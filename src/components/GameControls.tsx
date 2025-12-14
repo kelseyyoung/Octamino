@@ -17,6 +17,7 @@ import type { MoveShapeDirection } from "../objects/Grid";
 
 export type GameControlsProps = {
   puzzleIndex: number;
+  difficultyLabel: "Easy" | "Medium" | "Hard";
   elapsedTime: number;
   canGoToNextShape: boolean;
   canUndo: boolean;
@@ -33,6 +34,7 @@ export type GameControlsProps = {
 
 export function GameControls({
   puzzleIndex,
+  difficultyLabel,
   elapsedTime,
   canGoToNextShape,
   canUndo,
@@ -47,17 +49,17 @@ export function GameControls({
   onFlipActiveShape,
 }: GameControlsProps) {
   return (
-    <CenteredColumnStack>
+    <CenteredColumnStack spacing={1}>
       {/* Puzzle number and timer row */}
       <CenteredRowStack spacing={2} width="100%" sx={{ mb: 0.5 }}>
         <Typography
           sx={{
-            flex: 1,
+            flex: 3,
             textAlign: "left",
             variant: "body2",
           }}
         >
-          Puzzle #{puzzleIndex}
+          Puzzle #{puzzleIndex} - {difficultyLabel}
         </Typography>
         <Typography
           sx={{
@@ -71,13 +73,14 @@ export function GameControls({
       </CenteredRowStack>
 
       {/* Next shape and Undo buttons */}
-      <CenteredRowStack>
+      <CenteredRowStack sx={{ mb: 2 }}>
         <Button
           color="primary"
           variant="contained"
           onClick={onNextShape}
           disabled={!canGoToNextShape}
           size={buttonSize}
+          aria-label={isLastShape ? "Finish puzzle (N)" : "Next shape (N)"}
           sx={{
             flexGrow: 3,
             boxShadow: "none",
@@ -93,6 +96,7 @@ export function GameControls({
           variant="outlined"
           disabled={!canUndo}
           size={buttonSize}
+          aria-label="Undo (U)"
           sx={{
             flexGrow: 1,
           }}
@@ -206,6 +210,7 @@ function RotateButtons({
           variant="outlined"
           onClick={() => onRotateActiveShape(false)}
           size={buttonSize}
+          aria-label="Rotate left (E)"
           sx={minWidth ? { minWidth } : undefined}
         >
           <Rotate90DegreesCwIcon className={"rotate-left"} />
@@ -216,6 +221,7 @@ function RotateButtons({
           variant="outlined"
           onClick={() => onRotateActiveShape(true)}
           size={buttonSize}
+          aria-label="Rotate right (R)"
           sx={minWidth ? { minWidth } : undefined}
         >
           <Rotate90DegreesCwIcon />
@@ -247,6 +253,7 @@ function FlipButtons({
           variant="outlined"
           onClick={() => onFlipActiveShape(true)}
           size={buttonSize}
+          aria-label="Flip horizontal (F)"
           sx={minWidth ? { minWidth } : undefined}
         >
           <SwapHorizIcon />
@@ -261,6 +268,7 @@ function FlipButtons({
           variant="outlined"
           onClick={() => onFlipActiveShape(false)}
           size={buttonSize}
+          aria-label="Flip vertical (V)"
           sx={minWidth ? { minWidth } : undefined}
         >
           <SwapVertIcon />
