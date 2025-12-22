@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate improved symmetry-based rankings from a ranking file
- * 
+ *
  * FEATURES:
  * - Outlier detection: Identifies tiles far from the main cluster
  * - Robust scoring: Calculates symmetry/compactness with and without outliers
@@ -18,22 +18,29 @@ const path = require("path");
 const args = process.argv.slice(2);
 const inputPath = args[0]
   ? path.join(__dirname, args[0])
-  : path.join(__dirname, "public/RankingWithEntireSquare.txt");
+  : path.join(__dirname, "public/8x8squaresNumb.txt");
 const outputPath = args[1]
   ? path.join(__dirname, args[1])
   : path.join(__dirname, "public/NewRanking.txt");
 
 // Parse shape data
+// Supports two formats:
+// - 64 numbers: just the 8x8 grid tiles (no ranking)
+// - 65 numbers: 64 grid tiles + ranking at the end
 function parseRankingFile(filePath) {
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.trim().split("\n");
 
   return lines.map((line) => {
     const numbers = line.trim().split(/\s+/).map(Number);
+
+    // Detect format based on number count
+    const hasRanking = numbers.length === 65;
+
     return {
       tiles: numbers.slice(0, 8),
-      allNumbers: numbers.slice(0, -1),
-      originalRanking: numbers[numbers.length - 1],
+      allNumbers: hasRanking ? numbers.slice(0, -1) : numbers,
+      originalRanking: hasRanking ? numbers[numbers.length - 1] : null,
     };
   });
 }
@@ -71,7 +78,7 @@ function detectOutliers(tiles) {
   if (tiles.length <= 3) return { outliers: [], core: tiles };
 
   const coords = tiles.map(tileToCoords);
-  
+
   // Calculate pairwise distances
   const distances = [];
   for (let i = 0; i < coords.length; i++) {
@@ -81,7 +88,10 @@ function detectOutliers(tiles) {
         totalDist += distance(coords[i], coords[j]);
       }
     }
-    distances.push({ tile: tiles[i], avgDistance: totalDist / (coords.length - 1) });
+    distances.push({
+      tile: tiles[i],
+      avgDistance: totalDist / (coords.length - 1),
+    });
   }
 
   // Sort by average distance
@@ -98,7 +108,7 @@ function detectOutliers(tiles) {
   // Limit outliers to at most 2 tiles (if more than 2 are far, the shape is just scattered)
   const maxOutliers = Math.min(2, Math.floor(tiles.length * 0.25));
   const actualOutliers = outliers.slice(0, maxOutliers);
-  
+
   const core = tiles.filter((t) => !actualOutliers.includes(t));
 
   return { outliers: actualOutliers, core };
@@ -107,7 +117,7 @@ function detectOutliers(tiles) {
 // Check if tiles form a rectangle
 function isRectangle(tiles) {
   if (tiles.length < 4) return false;
-  
+
   const coords = tiles.map(tileToCoords);
   const minRow = Math.min(...coords.map((c) => c.row));
   const maxRow = Math.max(...coords.map((c) => c.row));
@@ -123,14 +133,14 @@ function isStraightLine(tiles) {
   const coords = tiles.map(tileToCoords);
   const rows = [...new Set(coords.map((c) => c.row))];
   const cols = [...new Set(coords.map((c) => c.col))];
-  
+
   return rows.length === 1 || cols.length === 1;
 }
 
 // Calculate compactness score
 function calculateCompactness(tiles) {
   if (tiles.length === 0) return 0;
-  
+
   const coords = tiles.map(tileToCoords);
   const minRow = Math.min(...coords.map((c) => c.row));
   const maxRow = Math.max(...coords.map((c) => c.row));
@@ -161,6 +171,26 @@ function checkHorizontalSymmetry(tiles) {
   return symmetryScore / tiles.length;
 }
 
+// Check horizontal symmetry for a value grid (checks if values are mirrored)
+function checkHorizontalSymmetryGrid(grid) {
+  let matches = 0;
+  let total = 0;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 4; col++) {
+      // Check left vs right
+      const leftIdx = row * 8 + col;
+      const rightIdx = row * 8 + (7 - col);
+      if (grid[leftIdx] === grid[rightIdx]) {
+        matches++;
+      }
+      total++;
+    }
+  }
+
+  return matches / total;
+}
+
 // Check vertical symmetry
 function checkVerticalSymmetry(tiles) {
   const coords = tiles.map(tileToCoords);
@@ -179,6 +209,26 @@ function checkVerticalSymmetry(tiles) {
   }
 
   return symmetryScore / tiles.length;
+}
+
+// Check vertical symmetry for a value grid (checks if values are mirrored)
+function checkVerticalSymmetryGrid(grid) {
+  let matches = 0;
+  let total = 0;
+
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 8; col++) {
+      // Check top vs bottom
+      const topIdx = row * 8 + col;
+      const bottomIdx = (7 - row) * 8 + col;
+      if (grid[topIdx] === grid[bottomIdx]) {
+        matches++;
+      }
+      total++;
+    }
+  }
+
+  return matches / total;
 }
 
 // Check diagonal symmetry
@@ -207,6 +257,28 @@ function checkDiagonalSymmetry(tiles) {
   return symmetryScore / tiles.length;
 }
 
+// Check diagonal symmetry for a value grid (transpose)
+function checkDiagonalSymmetryGrid(grid) {
+  let matches = 0;
+  let total = 0;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (row < col) {
+        // Only check upper triangle to avoid double counting
+        const idx1 = row * 8 + col;
+        const idx2 = col * 8 + row;
+        if (grid[idx1] === grid[idx2]) {
+          matches++;
+        }
+        total++;
+      }
+    }
+  }
+
+  return total > 0 ? matches / total : 0;
+}
+
 // Check anti-diagonal symmetry
 function checkAntiDiagonalSymmetry(tiles) {
   const coords = tiles.map(tileToCoords);
@@ -233,6 +305,28 @@ function checkAntiDiagonalSymmetry(tiles) {
   return symmetryScore / tiles.length;
 }
 
+// Check anti-diagonal symmetry for a value grid
+function checkAntiDiagonalSymmetryGrid(grid) {
+  let matches = 0;
+  let total = 0;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (row + col < 7) {
+        // Only check lower-left triangle
+        const idx1 = row * 8 + col;
+        const idx2 = (7 - col) * 8 + (7 - row);
+        if (grid[idx1] === grid[idx2]) {
+          matches++;
+        }
+        total++;
+      }
+    }
+  }
+
+  return total > 0 ? matches / total : 0;
+}
+
 // Check 180-degree rotational symmetry
 function checkRotationalSymmetry(tiles) {
   const coords = tiles.map(tileToCoords);
@@ -257,10 +351,27 @@ function checkRotationalSymmetry(tiles) {
   return symmetryScore / tiles.length;
 }
 
+// Check 180-degree rotational symmetry for a value grid
+function checkRotationalSymmetryGrid(grid) {
+  let matches = 0;
+  let total = 0;
+
+  for (let i = 0; i < 32; i++) {
+    // Check first half vs second half (rotated)
+    const oppositeIdx = 63 - i;
+    if (grid[i] === grid[oppositeIdx]) {
+      matches++;
+    }
+    total++;
+  }
+
+  return matches / total;
+}
+
 // Calculate symmetry score for a set of tiles
 function calculateSymmetryForTiles(tiles) {
   if (tiles.length === 0) return 0;
-  
+
   const horizontal = checkHorizontalSymmetry(tiles);
   const vertical = checkVerticalSymmetry(tiles);
   const diagonal = checkDiagonalSymmetry(tiles);
@@ -270,11 +381,24 @@ function calculateSymmetryForTiles(tiles) {
   return Math.max(horizontal, vertical, diagonal, antiDiagonal, rotational);
 }
 
+// Calculate symmetry score for the entire grid (checks value patterns)
+function calculateGridSymmetry(grid) {
+  if (!grid || grid.length !== 64) return 0;
+
+  const horizontal = checkHorizontalSymmetryGrid(grid);
+  const vertical = checkVerticalSymmetryGrid(grid);
+  const diagonal = checkDiagonalSymmetryGrid(grid);
+  const antiDiagonal = checkAntiDiagonalSymmetryGrid(grid);
+  const rotational = checkRotationalSymmetryGrid(grid);
+
+  return Math.max(horizontal, vertical, diagonal, antiDiagonal, rotational);
+}
+
 // NEW IMPROVED SCORING ALGORITHM
-function calculateImprovedScore(tiles) {
-  // Step 1: Detect outliers
+function calculateImprovedScore(tiles, allTiles) {
+  // Step 1: Detect outliers in the first 8 tiles (primary shape)
   const { outliers, core } = detectOutliers(tiles);
-  
+
   // Step 2: Calculate scores for core tiles
   const coreSymmetry = calculateSymmetryForTiles(core);
   const coreCompactness = calculateCompactness(core);
@@ -285,7 +409,7 @@ function calculateImprovedScore(tiles) {
   if (isRectangle(core)) {
     patternBonus = 0.15; // Rectangles are very easy
   } else if (isStraightLine(core)) {
-    patternBonus = 0.10; // Lines are easy
+    patternBonus = 0.1; // Lines are easy
   }
 
   // Step 4: Outlier penalty
@@ -299,10 +423,18 @@ function calculateImprovedScore(tiles) {
     fullShapeBonus = (fullSymmetry * 0.7 + fullCompactness * 0.3) * 0.1;
   }
 
-  // Final score: prioritize core shape quality, penalize outliers
+  // Step 6: Consider the symmetry of the entire puzzle solution (all 64 tiles)
+  // This rewards solutions where the overall grid pattern is symmetrical
+  const gridSymmetry = calculateGridSymmetry(allTiles);
+  const gridBonus = gridSymmetry * 0.2; // Significant bonus for symmetrical full grids
+
+  // Final score: prioritize core shape quality, penalize outliers, bonus for grid symmetry
   const finalScore = Math.max(
     0,
-    Math.min(1, coreScore + patternBonus + fullShapeBonus - outlierPenalty)
+    Math.min(
+      1,
+      coreScore + patternBonus + fullShapeBonus - outlierPenalty + gridBonus
+    )
   );
 
   return finalScore;
@@ -313,7 +445,7 @@ function assignNewRankings(shapes) {
   const shapesWithScores = shapes.map((shape) => ({
     tiles: shape.tiles,
     allNumbers: shape.allNumbers,
-    score: calculateImprovedScore(shape.tiles),
+    score: calculateImprovedScore(shape.tiles, shape.allNumbers),
   }));
 
   // Sort by score (descending)
@@ -351,7 +483,14 @@ if (!fs.existsSync(inputPath)) {
 }
 
 const shapes = parseRankingFile(inputPath);
-console.log(`✓ Loaded ${shapes.length} shapes\n`);
+const hasOriginalRanking =
+  shapes.length > 0 && shapes[0].originalRanking !== null;
+console.log(`✓ Loaded ${shapes.length} shapes`);
+console.log(
+  `  Format: ${
+    hasOriginalRanking ? "65 numbers (with ranking)" : "64 numbers (no ranking)"
+  }\n`
+);
 
 console.log("Calculating improved rankings...");
 const rankedShapes = assignNewRankings(shapes);
@@ -383,4 +522,3 @@ Object.keys(rankingCounts)
   .forEach((rank) => {
     console.log(`  Rank ${rank}: ${rankingCounts[rank]} shapes`);
   });
-

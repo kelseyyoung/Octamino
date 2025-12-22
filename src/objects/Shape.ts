@@ -88,9 +88,9 @@ export class Shape {
         const parts = line.trim().split(" ");
         const score = parseInt(parts[parts.length - 1]);
         if (ranking === "easy") {
-          return score >= 13;
+          return score >= 14;
         } else if (ranking === "medium") {
-          return score >= 7 && score < 13;
+          return score >= 7 && score < 14;
         } else if (ranking === "hard") {
           return score < 7;
         }

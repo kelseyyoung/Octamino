@@ -2,7 +2,7 @@
  * Utility functions for the game
  */
 
-export const MAX_PUZZLE_NUMBER = 62642;
+export const MAX_PUZZLE_NUMBER = 62714;
 
 /**
  * Validates if a puzzle number string is valid
