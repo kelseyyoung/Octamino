@@ -98,7 +98,7 @@ export function getDeviceConfig(
       return {
         controlSpacing: {
           inner: 1.5,
-          outer: 4,
+          outer: 2.5,
         },
         headerHeight: 48,
       };

@@ -302,10 +302,7 @@ function HorizontalControls({
       </CenteredColumnStack>
 
       {/* Right transform controls */}
-      <CenteredColumnStack
-        spacing={controlSpacing.inner}
-        sx={{ flexGrow: 1, justifyContent: "center" }}
-      >
+      <CenteredColumnStack spacing={controlSpacing.inner} sx={{ flexGrow: 1 }}>
         <CenteredRowStack spacing={controlSpacing.inner}>
           <RotateButtons onRotateActiveShape={onRotateActiveShape} />
         </CenteredRowStack>
