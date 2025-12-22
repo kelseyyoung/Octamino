@@ -45,7 +45,7 @@ export const ArrowButton = ({ direction, onClick, sx }: ArrowButtonProps) => {
   return (
     <Button
       variant="outlined"
-      size={"large"}
+      size="large"
       onClick={onClick}
       aria-label={config.ariaLabel}
       sx={{

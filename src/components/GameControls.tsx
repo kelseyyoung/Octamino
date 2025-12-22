@@ -48,7 +48,7 @@ export function GameControls({
   return (
     <CenteredColumnStack spacing={1} sx={{ flex: 1 }}>
       {/* Puzzle number and timer row */}
-      <CenteredRowStack spacing={2} width="100%" sx={{ mb: 0.5 }}>
+      <CenteredRowStack spacing={2} width="100%">
         <Typography
           sx={{
             flex: 3,
@@ -70,7 +70,7 @@ export function GameControls({
       </CenteredRowStack>
 
       {/* Next shape and Undo buttons */}
-      <CenteredRowStack sx={{ mb: 2 }}>
+      <CenteredRowStack sx={{ mb: 0.5 }}>
         <Button
           color="primary"
           variant="contained"
@@ -302,7 +302,10 @@ function HorizontalControls({
       </CenteredColumnStack>
 
       {/* Right transform controls */}
-      <CenteredColumnStack spacing={controlSpacing.inner} sx={{ flexGrow: 1 }}>
+      <CenteredColumnStack
+        spacing={controlSpacing.inner}
+        sx={{ flexGrow: 1, justifyContent: "center" }}
+      >
         <CenteredRowStack spacing={controlSpacing.inner}>
           <RotateButtons onRotateActiveShape={onRotateActiveShape} />
         </CenteredRowStack>
