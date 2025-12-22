@@ -4,11 +4,13 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { MoveShapeDirection } from "../objects/Grid";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 type ArrowButtonProps = {
   direction: MoveShapeDirection;
   onClick: () => void;
   size?: "small" | "medium" | "large";
+  sx?: SxProps<Theme>;
 };
 
 const directionConfig: Record<
@@ -36,24 +38,21 @@ const directionConfig: Record<
   },
 };
 
-export const ArrowButton = ({
-  direction,
-  onClick,
-  size = "small",
-}: ArrowButtonProps) => {
+export const ArrowButton = ({ direction, onClick, sx }: ArrowButtonProps) => {
   const config = directionConfig[direction];
   const Icon = config.icon;
 
   return (
     <Button
       variant="outlined"
-      size={size}
+      size={"large"}
       onClick={onClick}
       aria-label={config.ariaLabel}
       sx={{
         minWidth: "auto",
-        paddingX: size === "large" ? 2 : size === "medium" ? 1.75 : 1.5,
-        paddingY: size === "large" ? 1 : size === "medium" ? 0.75 : 0.5,
+        paddingX: 2,
+        paddingY: 1,
+        ...sx,
       }}
     >
       <Icon />

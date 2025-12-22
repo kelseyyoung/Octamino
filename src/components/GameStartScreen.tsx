@@ -20,7 +20,6 @@ export type GameStartScreenProps = {
   difficulty: "easy" | "medium" | "hard";
   setDifficulty: (value: "easy" | "medium" | "hard") => void;
   isLoading: boolean;
-  buttonSize: "small" | "medium" | "large";
   onStartGame: () => void;
 };
 
@@ -30,7 +29,6 @@ export function GameStartScreen({
   difficulty,
   setDifficulty,
   isLoading,
-  buttonSize,
   onStartGame,
 }: GameStartScreenProps) {
   const handleDifficultyChange = (event: SelectChangeEvent) => {
@@ -118,7 +116,7 @@ export function GameStartScreen({
           onClick={onStartGame}
           color="primary"
           variant="contained"
-          size={buttonSize}
+          size="large"
           fullWidth
           disabled={isLoading || isPuzzleNumberInvalid(puzzleNumber)}
           sx={{

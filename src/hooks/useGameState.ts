@@ -141,7 +141,6 @@ export type UseResponsiveLayoutProps = {
   setDynamicPadding: (padding: number) => void;
   setGridSize: (size: number) => void;
   setUseVerticalControlLayout: (vertical: boolean) => void;
-  setButtonSize: (size: "small" | "medium" | "large") => void;
   setControlSpacing: (spacing: { inner: number; outer: number }) => void;
 };
 
@@ -153,7 +152,6 @@ export function useResponsiveLayout({
   setDynamicPadding,
   setGridSize,
   setUseVerticalControlLayout,
-  setButtonSize,
   setControlSpacing,
 }: UseResponsiveLayoutProps) {
   useEffect(() => {
@@ -167,7 +165,6 @@ export function useResponsiveLayout({
       setDynamicPadding(layout.dynamicPadding);
       setGridSize(layout.gridSize);
       setUseVerticalControlLayout(layout.useVerticalControlLayout);
-      setButtonSize(layout.buttonSize);
       setControlSpacing(layout.controlSpacing);
     };
 
@@ -181,7 +178,6 @@ export function useResponsiveLayout({
     setDynamicPadding,
     setGridSize,
     setUseVerticalControlLayout,
-    setButtonSize,
     setControlSpacing,
   ]);
 }

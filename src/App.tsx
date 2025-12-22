@@ -47,9 +47,6 @@ function App() {
   const [gridSize, setGridSize] = useState<number>(0);
   const [useVerticalControlLayout, setUseVerticalControlLayout] =
     useState<boolean>(false);
-  const [buttonSize, setButtonSize] = useState<"small" | "medium" | "large">(
-    "medium"
-  );
   const [controlSpacing, setControlSpacing] = useState<{
     inner: number;
     outer: number;
@@ -101,7 +98,6 @@ function App() {
     setDynamicPadding,
     setGridSize,
     setUseVerticalControlLayout,
-    setButtonSize,
     setControlSpacing,
   });
 
@@ -196,7 +192,6 @@ function App() {
             difficulty={difficulty}
             setDifficulty={setDifficulty}
             isLoading={isLoading}
-            buttonSize={buttonSize}
             onStartGame={() => void startGame()}
           />
         )}
@@ -209,7 +204,6 @@ function App() {
             canGoToNextShape={canGoToNextShape}
             canUndo={canUndo}
             isLastShape={isLastShape}
-            buttonSize={buttonSize}
             controlSpacing={controlSpacing}
             useVerticalControlLayout={useVerticalControlLayout}
             onNextShape={gameActions.nextShape}
@@ -234,7 +228,6 @@ function App() {
             elapsedTime={elapsedTime}
             puzzleIndex={grid.current.getPuzzleIndex()}
             difficulty={grid.current.getDifficulty()}
-            buttonSize={buttonSize}
             onPlayAgain={restartGame}
           />
         )}

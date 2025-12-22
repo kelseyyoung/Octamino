@@ -36,7 +36,6 @@ export type WinModalProps = {
   elapsedTime: number;
   puzzleIndex: number;
   difficulty: "Easy" | "Medium" | "Hard";
-  buttonSize: "small" | "medium" | "large";
   onPlayAgain: () => void;
 };
 
@@ -45,7 +44,6 @@ export function WinModal({
   elapsedTime,
   puzzleIndex,
   difficulty,
-  buttonSize,
   onPlayAgain,
 }: WinModalProps) {
   const stars = getStarRating(elapsedTime);
@@ -133,7 +131,7 @@ export function WinModal({
           color="primary"
           variant="contained"
           onClick={onPlayAgain}
-          size={buttonSize}
+          size="large"
           sx={{
             boxShadow: "none",
             "&:hover": {

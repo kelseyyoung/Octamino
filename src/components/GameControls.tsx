@@ -3,7 +3,6 @@
  * Displays all game controls: next/undo buttons, arrow buttons, rotate/flip buttons
  */
 
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -22,7 +21,6 @@ export type GameControlsProps = {
   canGoToNextShape: boolean;
   canUndo: boolean;
   isLastShape: boolean;
-  buttonSize: "small" | "medium" | "large";
   controlSpacing: { inner: number; outer: number };
   useVerticalControlLayout: boolean;
   onNextShape: () => void;
@@ -39,7 +37,6 @@ export function GameControls({
   canGoToNextShape,
   canUndo,
   isLastShape,
-  buttonSize,
   controlSpacing,
   useVerticalControlLayout,
   onNextShape,
@@ -49,7 +46,7 @@ export function GameControls({
   onFlipActiveShape,
 }: GameControlsProps) {
   return (
-    <CenteredColumnStack spacing={1}>
+    <CenteredColumnStack spacing={1} sx={{ flex: 1 }}>
       {/* Puzzle number and timer row */}
       <CenteredRowStack spacing={2} width="100%" sx={{ mb: 0.5 }}>
         <Typography
@@ -79,7 +76,7 @@ export function GameControls({
           variant="contained"
           onClick={onNextShape}
           disabled={!canGoToNextShape}
-          size={buttonSize}
+          size="large"
           aria-label={isLastShape ? "Finish puzzle (N)" : "Next shape (N)"}
           sx={{
             flexGrow: 3,
@@ -95,7 +92,7 @@ export function GameControls({
           onClick={onUndo}
           variant="outlined"
           disabled={!canUndo}
-          size={buttonSize}
+          size="large"
           aria-label="Undo (U)"
           sx={{
             flexGrow: 1,
@@ -108,7 +105,6 @@ export function GameControls({
       {/* Directional and transform controls */}
       {useVerticalControlLayout ? (
         <VerticalControls
-          buttonSize={buttonSize}
           controlSpacing={controlSpacing}
           onMoveActiveShape={onMoveActiveShape}
           onRotateActiveShape={onRotateActiveShape}
@@ -116,7 +112,6 @@ export function GameControls({
         />
       ) : (
         <HorizontalControls
-          buttonSize={buttonSize}
           controlSpacing={controlSpacing}
           onMoveActiveShape={onMoveActiveShape}
           onRotateActiveShape={onRotateActiveShape}
@@ -128,7 +123,6 @@ export function GameControls({
 }
 
 type ControlsLayoutProps = {
-  buttonSize: "small" | "medium" | "large";
   controlSpacing: { inner: number; outer: number };
   onMoveActiveShape: (direction: MoveShapeDirection) => void;
   onRotateActiveShape: (clockwise: boolean) => void;
@@ -137,79 +131,60 @@ type ControlsLayoutProps = {
 
 // Reusable sub-components
 type DirectionalPadProps = {
-  buttonSize: "small" | "medium" | "large";
   spacing: number;
+  vertical?: boolean;
   onMoveActiveShape: (direction: MoveShapeDirection) => void;
-  wrapInBox?: boolean;
 };
 
 function DirectionalPad({
-  buttonSize,
   spacing,
+  vertical,
   onMoveActiveShape,
-  wrapInBox = false,
 }: DirectionalPadProps) {
-  const ArrowButtonWrapper = wrapInBox ? Box : "div";
-  const wrapperProps = wrapInBox ? {} : { style: { display: "contents" } };
-
+  const verticalPadding = vertical
+    ? { paddingY: 2, paddingX: 3, maxHeight: 52 }
+    : undefined;
   return (
     <CenteredColumnStack spacing={spacing}>
+      <ArrowButton
+        direction="up"
+        onClick={() => onMoveActiveShape("up")}
+        sx={verticalPadding}
+      />
       <CenteredRowStack spacing={spacing}>
-        <ArrowButtonWrapper {...wrapperProps}>
-          <ArrowButton
-            direction="up"
-            onClick={() => onMoveActiveShape("up")}
-            size={buttonSize}
-          />
-        </ArrowButtonWrapper>
+        <ArrowButton
+          direction="left"
+          onClick={() => onMoveActiveShape("left")}
+          sx={verticalPadding}
+        />
+        <ArrowButton
+          direction="right"
+          onClick={() => onMoveActiveShape("right")}
+          sx={verticalPadding}
+        />
       </CenteredRowStack>
-      <CenteredRowStack spacing={spacing}>
-        <ArrowButtonWrapper {...wrapperProps}>
-          <ArrowButton
-            direction="left"
-            onClick={() => onMoveActiveShape("left")}
-            size={buttonSize}
-          />
-        </ArrowButtonWrapper>
-        <ArrowButtonWrapper {...wrapperProps}>
-          <ArrowButton
-            direction="right"
-            onClick={() => onMoveActiveShape("right")}
-            size={buttonSize}
-          />
-        </ArrowButtonWrapper>
-      </CenteredRowStack>
-      <CenteredRowStack spacing={spacing}>
-        <ArrowButtonWrapper {...wrapperProps}>
-          <ArrowButton
-            direction="down"
-            onClick={() => onMoveActiveShape("down")}
-            size={buttonSize}
-          />
-        </ArrowButtonWrapper>
-      </CenteredRowStack>
+      <ArrowButton
+        direction="down"
+        onClick={() => onMoveActiveShape("down")}
+        sx={verticalPadding}
+      />
     </CenteredColumnStack>
   );
 }
 
 type RotateButtonsProps = {
-  buttonSize: "small" | "medium" | "large";
   onRotateActiveShape: (clockwise: boolean) => void;
   minWidth?: string;
 };
 
-function RotateButtons({
-  buttonSize,
-  onRotateActiveShape,
-  minWidth,
-}: RotateButtonsProps) {
+function RotateButtons({ onRotateActiveShape, minWidth }: RotateButtonsProps) {
   return (
     <>
       <Tooltip title="Rotate left" placement="top" slotProps={tooltipOffset}>
         <Button
           variant="outlined"
           onClick={() => onRotateActiveShape(false)}
-          size={buttonSize}
+          size="large"
           aria-label="Rotate left (E)"
           sx={minWidth ? { minWidth } : undefined}
         >
@@ -220,7 +195,7 @@ function RotateButtons({
         <Button
           variant="outlined"
           onClick={() => onRotateActiveShape(true)}
-          size={buttonSize}
+          size="large"
           aria-label="Rotate right (R)"
           sx={minWidth ? { minWidth } : undefined}
         >
@@ -232,16 +207,11 @@ function RotateButtons({
 }
 
 type FlipButtonsProps = {
-  buttonSize: "small" | "medium" | "large";
   onFlipActiveShape: (horizontal: boolean) => void;
   minWidth?: string;
 };
 
-function FlipButtons({
-  buttonSize,
-  onFlipActiveShape,
-  minWidth,
-}: FlipButtonsProps) {
+function FlipButtons({ onFlipActiveShape, minWidth }: FlipButtonsProps) {
   return (
     <>
       <Tooltip
@@ -252,7 +222,7 @@ function FlipButtons({
         <Button
           variant="outlined"
           onClick={() => onFlipActiveShape(true)}
-          size={buttonSize}
+          size="large"
           aria-label="Flip horizontal (F)"
           sx={minWidth ? { minWidth } : undefined}
         >
@@ -267,7 +237,7 @@ function FlipButtons({
         <Button
           variant="outlined"
           onClick={() => onFlipActiveShape(false)}
-          size={buttonSize}
+          size="large"
           aria-label="Flip vertical (V)"
           sx={minWidth ? { minWidth } : undefined}
         >
@@ -279,37 +249,36 @@ function FlipButtons({
 }
 
 function VerticalControls({
-  buttonSize,
   controlSpacing,
   onMoveActiveShape,
   onRotateActiveShape,
   onFlipActiveShape,
 }: ControlsLayoutProps) {
   return (
-    <CenteredColumnStack width="100%" spacing={controlSpacing.outer}>
+    <CenteredColumnStack
+      width="100%"
+      spacing={controlSpacing.outer}
+      sx={{ flex: 1 }}
+    >
       {/* Arrow buttons */}
-      <DirectionalPad
-        buttonSize={buttonSize}
-        spacing={controlSpacing.inner}
-        onMoveActiveShape={onMoveActiveShape}
-        wrapInBox={true}
-      />
+      <div style={{ flex: 6, display: "flex", justifyContent: "center" }}>
+        <DirectionalPad
+          spacing={controlSpacing.inner}
+          vertical={true}
+          onMoveActiveShape={onMoveActiveShape}
+        />
+      </div>
 
       {/* Rotate and Flip buttons */}
-      <CenteredColumnStack spacing={controlSpacing.inner}>
+      <CenteredColumnStack spacing={controlSpacing.inner} sx={{ flex: 4 }}>
         <CenteredRowStack spacing={controlSpacing.inner}>
           <RotateButtons
-            buttonSize={buttonSize}
             onRotateActiveShape={onRotateActiveShape}
             minWidth="80px"
           />
         </CenteredRowStack>
         <CenteredRowStack spacing={controlSpacing.inner}>
-          <FlipButtons
-            buttonSize={buttonSize}
-            onFlipActiveShape={onFlipActiveShape}
-            minWidth="80px"
-          />
+          <FlipButtons onFlipActiveShape={onFlipActiveShape} minWidth="80px" />
         </CenteredRowStack>
       </CenteredColumnStack>
     </CenteredColumnStack>
@@ -317,18 +286,16 @@ function VerticalControls({
 }
 
 function HorizontalControls({
-  buttonSize,
   controlSpacing,
   onMoveActiveShape,
   onRotateActiveShape,
   onFlipActiveShape,
 }: ControlsLayoutProps) {
   return (
-    <CenteredRowStack width="70%" spacing={controlSpacing.outer}>
+    <CenteredRowStack spacing={controlSpacing.outer} sx={{ flex: 1 }}>
       {/* Left directional controls */}
       <CenteredColumnStack spacing={controlSpacing.inner} sx={{ flexGrow: 1 }}>
         <DirectionalPad
-          buttonSize={buttonSize}
           spacing={controlSpacing.inner}
           onMoveActiveShape={onMoveActiveShape}
         />
@@ -337,16 +304,10 @@ function HorizontalControls({
       {/* Right transform controls */}
       <CenteredColumnStack spacing={controlSpacing.inner} sx={{ flexGrow: 1 }}>
         <CenteredRowStack spacing={controlSpacing.inner}>
-          <RotateButtons
-            buttonSize={buttonSize}
-            onRotateActiveShape={onRotateActiveShape}
-          />
+          <RotateButtons onRotateActiveShape={onRotateActiveShape} />
         </CenteredRowStack>
         <CenteredRowStack spacing={controlSpacing.inner}>
-          <FlipButtons
-            buttonSize={buttonSize}
-            onFlipActiveShape={onFlipActiveShape}
-          />
+          <FlipButtons onFlipActiveShape={onFlipActiveShape} />
         </CenteredRowStack>
       </CenteredColumnStack>
     </CenteredRowStack>

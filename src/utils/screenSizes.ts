@@ -67,30 +67,25 @@ export function getOrientation(
  * Configuration for UI sizing based on device type
  */
 type DeviceConfig = {
-  buttonSize: "small" | "medium" | "large";
   controlSpacing: {
     inner: number;
     outer: number;
   };
   headerHeight: number;
-  controlsHeight: number;
 };
 
 /**
  * Get device-specific configuration
  *
  * Mobile:
- * - Large buttons for better touch targets
  * - More spacing between controls
  * - Portrait mode optimized
  *
  * Tablet:
- * - Large buttons for touch-friendly interface
  * - Moderate spacing
  * - Optimized for both portrait and landscape
  *
  * Desktop:
- * - Medium buttons
  * - Standard spacing
  * - Landscape mode optimized
  */
@@ -101,35 +96,29 @@ export function getDeviceConfig(
   switch (deviceType) {
     case "mobile":
       return {
-        buttonSize: "large",
         controlSpacing: {
           inner: 1.5,
           outer: 4,
         },
         headerHeight: 48,
-        controlsHeight: 320,
       };
 
     case "tablet":
       return {
-        buttonSize: "large",
         controlSpacing: {
           inner: 1,
           outer: 3,
         },
         headerHeight: orientation === "portrait" ? 50 : 58,
-        controlsHeight: orientation === "portrait" ? 300 : 260,
       };
 
     case "desktop":
       return {
-        buttonSize: "medium",
         controlSpacing: {
           inner: 1,
           outer: 3,
         },
         headerHeight: 58,
-        controlsHeight: 260,
       };
   }
 }
@@ -145,7 +134,6 @@ type LayoutConfig = {
   dynamicTileSize: number;
   dynamicPadding: number;
   gridSize: number;
-  buttonSize: "small" | "medium" | "large";
   controlSpacing: {
     inner: number;
     outer: number;
@@ -209,11 +197,10 @@ export function calculateResponsiveLayout(
 
   // Calculate available space
   const availableWidth = viewportWidth - MIN_SIDE_PADDING * 2;
+  // Since controls now flex to fill remaining space, we just need to account for header
+  // and leave enough space for the controls to be usable
   const availableHeight =
-    viewportHeight -
-    config.headerHeight -
-    config.controlsHeight -
-    VERTICAL_SPACING;
+    viewportHeight - config.headerHeight - VERTICAL_SPACING;
 
   // Determine target grid size based on orientation
   let targetGridSize: number;
@@ -221,12 +208,12 @@ export function calculateResponsiveLayout(
   if (orientation === "landscape") {
     // Desktop (landscape) or Tablet (landscape):
     // Size based on available height (smaller dimension)
-    // Cap at 50% of width to ensure it fits
-    targetGridSize = Math.min(availableHeight, viewportWidth * 0.5);
+    // Cap at 50% of width to ensure it fits, and leave 40% of height for controls
+    targetGridSize = Math.min(availableHeight * 0.6, viewportWidth * 0.5);
   } else {
     // Mobile (portrait) or Tablet (portrait):
     // Size based on available width (smaller dimension)
-    // Cap at 50% of height to ensure it fits
+    // Cap at 50% of total viewport height (not just available) to leave room for controls
     targetGridSize = Math.min(availableWidth, viewportHeight * 0.5);
   }
 
@@ -251,7 +238,6 @@ export function calculateResponsiveLayout(
     dynamicTileSize: calculatedTileSize,
     dynamicPadding: finalPadding,
     gridSize: actualGridSize,
-    buttonSize: config.buttonSize,
     controlSpacing: config.controlSpacing,
     useVerticalControlLayout,
   };
