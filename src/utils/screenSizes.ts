@@ -78,21 +78,14 @@ type DeviceConfig = {
  * Get device-specific configuration
  *
  * Mobile:
- * - More spacing between controls
+ * - More spacing between buttons, but less spacing between control groups
  * - Portrait mode optimized
  *
  * Tablet:
- * - Moderate spacing
- * - Optimized for both portrait and landscape
- *
  * Desktop:
- * - Standard spacing
- * - Landscape mode optimized
+ * - Less spacing between buttons, but more spacing between control groups
  */
-export function getDeviceConfig(
-  deviceType: DeviceType,
-  orientation: Orientation
-): DeviceConfig {
+function getDeviceConfig(deviceType: DeviceType): DeviceConfig {
   switch (deviceType) {
     case "mobile":
       return {
@@ -100,25 +93,17 @@ export function getDeviceConfig(
           inner: 1.5,
           outer: 2.5,
         },
-        headerHeight: 48,
+        headerHeight: 52,
       };
 
     case "tablet":
-      return {
-        controlSpacing: {
-          inner: 1,
-          outer: 3,
-        },
-        headerHeight: orientation === "portrait" ? 50 : 58,
-      };
-
     case "desktop":
       return {
         controlSpacing: {
           inner: 1,
           outer: 3,
         },
-        headerHeight: 58,
+        headerHeight: 62,
       };
   }
 }
@@ -154,12 +139,7 @@ function shouldUseVerticalControls(
   viewportHeight: number
 ): boolean {
   // Tablets always use horizontal layout
-  if (deviceType === "tablet") {
-    return false;
-  }
-
-  // Desktop always uses horizontal layout (always landscape)
-  if (deviceType === "desktop") {
+  if (deviceType === "tablet" || deviceType === "desktop") {
     return false;
   }
 
@@ -193,7 +173,7 @@ export function calculateResponsiveLayout(
   const orientation = getOrientation(viewportWidth, viewportHeight);
 
   // Get device-specific configuration
-  const config = getDeviceConfig(deviceType, orientation);
+  const config = getDeviceConfig(deviceType);
 
   // Calculate available space
   const availableWidth = viewportWidth - MIN_SIDE_PADDING * 2;

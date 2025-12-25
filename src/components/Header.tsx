@@ -55,7 +55,7 @@ export const Header = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "4px 16px" /* Reduced padding for compact header */,
+          padding: "4px 16px",
           paddingTop: "8px",
           boxSizing: "border-box",
         }}
