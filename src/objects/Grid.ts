@@ -88,6 +88,19 @@ export class Grid {
     this.shapesOnGrid.push(nextShape);
   }
 
+  async startDailyGame() {
+    const result = await Shape.generateDailyPuzzle();
+    this.allShapes = result.shapes;
+    this.puzzleIndex = result.puzzleIndex;
+    this.difficulty = result.ranking;
+    this.initialShape = this.allShapes[0];
+    const nextShape = Shape.duplicate(this.initialShape);
+    this.randomizeShape(nextShape);
+    nextShape.setIsActive(true);
+    this.shapesOnGrid.push(nextShape);
+    return result.dailyDate; // Return the date for display
+  }
+
   addShape() {
     if (!this.initialShape) {
       console.error("Tried to add shape before starting the game!");

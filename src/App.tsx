@@ -138,12 +138,23 @@ function App() {
     gameActions.restartGame();
   };
 
-  const handleModeSelect = (mode: "daily" | "freeplay") => {
+  const handleModeSelect = async (mode: "daily" | "freeplay") => {
     setShowModeModal(false);
-    // Daily mode not implemented yet, only freeplay works
-    if (mode === "freeplay") {
-      // User can now see the game start screen
+
+    if (mode === "daily") {
+      // Start daily puzzle immediately
+      setIsLoading(true);
+      try {
+        await grid.current.startDailyGame();
+        setGameStarted(true);
+        redraw(grid);
+      } catch (error) {
+        console.error("Error starting daily game:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    // For freeplay mode, user can now see the game start screen
   };
 
   const closeSolutionModal = () => {
@@ -173,7 +184,9 @@ function App() {
               zIndex: 10,
             }}
           >
-            <GameModeModal onSelectMode={handleModeSelect} />
+            <GameModeModal
+              onSelectMode={(mode) => void handleModeSelect(mode)}
+            />
           </Box>
         )}
       </Box>

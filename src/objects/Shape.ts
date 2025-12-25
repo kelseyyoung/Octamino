@@ -1,11 +1,25 @@
 import { GRID_TILES } from "./Grid";
 import { Tile } from "./Tile";
 
+const EASY_RANKING_THRESHOLD = 14;
+const MEDIUM_RANKING_THRESHOLD = 7;
+
 let rankings: string = "";
+let orderedRankings: string = "";
+
 async function loadRankings(): Promise<void> {
   if (!rankings) {
     const response = await fetch(`${import.meta.env.BASE_URL}NewRanking.txt`);
     rankings = await response.text();
+  }
+}
+
+async function loadOrderedRankings(): Promise<void> {
+  if (!orderedRankings) {
+    const response = await fetch(
+      `${import.meta.env.BASE_URL}OrderedRanking.txt`
+    );
+    orderedRankings = await response.text();
   }
 }
 
@@ -88,11 +102,13 @@ export class Shape {
         const parts = line.trim().split(" ");
         const score = parseInt(parts[parts.length - 1]);
         if (ranking === "easy") {
-          return score >= 14;
+          return score >= EASY_RANKING_THRESHOLD;
         } else if (ranking === "medium") {
-          return score >= 7 && score < 14;
+          return (
+            score >= MEDIUM_RANKING_THRESHOLD && score < EASY_RANKING_THRESHOLD
+          );
         } else if (ranking === "hard") {
-          return score < 7;
+          return score < MEDIUM_RANKING_THRESHOLD;
         }
       });
 
@@ -156,9 +172,9 @@ export class Shape {
 
     // Determine ranking based on score
     let ranking: "Easy" | "Medium" | "Hard";
-    if (score >= 13) {
+    if (score >= EASY_RANKING_THRESHOLD) {
       ranking = "Easy";
-    } else if (score >= 7) {
+    } else if (score >= MEDIUM_RANKING_THRESHOLD) {
       ranking = "Medium";
     } else {
       ranking = "Hard";
@@ -182,6 +198,79 @@ export class Shape {
       shapes.push(new Shape(positions, shuffledColors[i]));
     }
     return { shapes, puzzleIndex, ranking };
+  }
+
+  static async generateDailyPuzzle(): Promise<{
+    shapes: Shape[];
+    puzzleIndex: number;
+    ranking: "Easy" | "Medium" | "Hard";
+    dailyDate: string;
+  }> {
+    // Read the OrderedRanking.txt file
+    await loadOrderedRankings();
+
+    // Calculate days since December 22, 2025
+    const startDate = new Date("2025-12-22T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for consistent comparison
+
+    const diffTime = today.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    // If before start date, use day 0; otherwise use diffDays
+    const dayIndex = Math.max(0, diffDays);
+
+    const lines = orderedRankings.trim().split("\n");
+    // Use modulo to cycle through puzzles if we run out
+    const lineIndex = dayIndex % lines.length;
+
+    if (lines.length === 0) {
+      throw new Error("No puzzles found in OrderedRanking.txt");
+    }
+
+    const selectedLine = lines[lineIndex];
+    const parts = selectedLine.trim().split(/\s+/).map(Number);
+
+    // OrderedRanking.txt format: 64 grid numbers + ranking + original puzzle index
+    const score = parts[64]; // ranking
+    const originalPuzzleIndex = parts[65]; // original puzzle number from NewRanking.txt
+
+    // Determine ranking based on score
+    let ranking: "Easy" | "Medium" | "Hard";
+    if (score >= EASY_RANKING_THRESHOLD) {
+      ranking = "Easy";
+    } else if (score >= MEDIUM_RANKING_THRESHOLD) {
+      ranking = "Medium";
+    } else {
+      ranking = "Hard";
+    }
+
+    // Create all 8 shapes and put them in an array
+    const shapes: Shape[] = [];
+
+    // Shuffle the colors array to randomize which color goes to which shape
+    const shuffledColors = [...COLORS].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < 8; i++) {
+      const positions: { x: number; y: number }[] = [];
+      // Each shape gets 8 tiles from parts[i*8] to parts[i*8+7]
+      for (let j = 0; j < 8; j++) {
+        const index = parts[i * 8 + j];
+        const x = index % 8;
+        const y = Math.floor(index / 8);
+        positions.push({ x, y });
+      }
+      shapes.push(new Shape(positions, shuffledColors[i]));
+    }
+
+    // Format the date for display
+    const dailyDate = today.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    return { shapes, puzzleIndex: originalPuzzleIndex, ranking, dailyDate };
   }
 
   static duplicate(s: Shape): Shape {

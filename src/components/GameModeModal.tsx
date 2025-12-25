@@ -5,7 +5,6 @@
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 
 type GameModeModalProps = {
   onSelectMode: (mode: "daily" | "freeplay") => void;
@@ -30,31 +29,18 @@ export function GameModeModal({ onSelectMode }: GameModeModalProps) {
       }}
     >
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Daily mode button - disabled */}
-        <Box sx={{ position: "relative" }}>
-          <Button
-            variant="contained"
-            fullWidth
-            disabled
-            sx={{
-              py: 2,
-              fontSize: "1.1rem",
-            }}
-          >
-            Daily
-          </Button>
-          <Chip
-            label="Coming soon"
-            size="small"
-            sx={{
-              position: "absolute",
-              top: -10,
-              right: -10,
-              bgcolor: "primary.main",
-              color: "white",
-            }}
-          />
-        </Box>
+        {/* Daily mode button */}
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={() => onSelectMode("daily")}
+          sx={{
+            py: 2,
+            fontSize: "1.1rem",
+          }}
+        >
+          Daily
+        </Button>
 
         {/* Freeplay mode button */}
         <Button
