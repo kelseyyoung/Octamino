@@ -19,6 +19,7 @@ type HeaderProps = {
 };
 
 export const Header = ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onAutoComplete,
   onRestart,
   gameStarted,
@@ -102,6 +103,7 @@ export const Header = ({
               sx={{
                 minWidth: "auto",
                 px: 1.5,
+                visibility: "hidden",
               }}
               aria-label="Autocomplete puzzle"
             >
