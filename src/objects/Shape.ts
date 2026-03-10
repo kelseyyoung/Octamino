@@ -209,13 +209,23 @@ export class Shape {
     // Read the OrderedRanking.txt file
     await loadOrderedRankings();
 
-    // Calculate days since December 22, 2025
+    // Compare UTC calendar dates so DST shifts do not change the puzzle day index.
     const startDate = new Date("2025-12-22T00:00:00");
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to start of day for consistent comparison
+    const startUtcDay = Date.UTC(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+    const todayUtcDay = Date.UTC(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
 
-    const diffTime = today.getTime() - startDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (todayUtcDay - startUtcDay) / (1000 * 60 * 60 * 24)
+    );
 
     // If before start date, use day 0; otherwise use diffDays
     const dayIndex = Math.max(0, diffDays);
