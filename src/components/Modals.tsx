@@ -3,6 +3,7 @@
  * Contains WinModal and SolutionModal
  */
 
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -39,6 +40,16 @@ export type WinModalProps = {
   onPlayAgain: () => void;
 };
 
+function buildShareText(
+  puzzleIndex: number,
+  difficulty: string,
+  elapsedTime: number,
+  stars: number,
+): string {
+  const starEmojis = "⭐".repeat(stars);
+  return `Octamino!\n#${puzzleIndex}         ⏱ ${formatTime(elapsedTime)}\n${difficulty}    ${starEmojis}`;
+}
+
 export function WinModal({
   show,
   elapsedTime,
@@ -47,6 +58,22 @@ export function WinModal({
   onPlayAgain,
 }: WinModalProps) {
   const stars = getStarRating(elapsedTime);
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const text = buildShareText(puzzleIndex, difficulty, elapsedTime, stars);
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch {
+        // User cancelled or share failed — do nothing
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   return (
     <Slide direction="up" in={show} timeout={500}>
@@ -127,22 +154,38 @@ export function WinModal({
             </Box>
           </Box>
         </Box>
-        <Button
-          color="primary"
-          variant="contained"
-          onClick={onPlayAgain}
-          size="large"
-          sx={{
-            boxShadow: "none",
-            "&:hover": {
+        <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={onPlayAgain}
+            size="large"
+            sx={{
               boxShadow: "none",
-            },
-            px: 4,
-            py: 1.5,
-          }}
-        >
-          Play again
-        </Button>
+              "&:hover": { boxShadow: "none" },
+              px: 4,
+              py: 1.5,
+            }}
+          >
+            Play again
+          </Button>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => {
+              void handleShare();
+            }}
+            size="large"
+            sx={{
+              boxShadow: "none",
+              "&:hover": { boxShadow: "none" },
+              px: 3,
+              py: 1.5,
+            }}
+          >
+            {copied ? "Copied!" : "Share"}
+          </Button>
+        </Box>
       </Box>
     </Slide>
   );
@@ -202,7 +245,7 @@ function SolutionTable({ shapes }: SolutionTableProps) {
 
   // Create an 8x8 grid map to store which color belongs to each cell
   const gridMap: (string | null)[][] = Array.from({ length: 8 }, () =>
-    Array.from({ length: 8 }, () => null)
+    Array.from({ length: 8 }, () => null),
   );
 
   // Fill the grid map with colors from each shape
